@@ -4,6 +4,11 @@ subroutine ini
     integer:: I_r,I_z,i1,i2
     real*8  r_resonance,z_resonance,b0_set
     real*8  total_cycles,tau_ion_predicted
+
+
+    !<4namelist>
+    namelist /ini/ 
+
     call start_ftime
 
     iswitch_analytic_profile = 1
@@ -18,7 +23,8 @@ subroutine ini
     !                    2: 冷等离子体，仅保留电子电流
     !                    3: 热等离子体，离子动力学 + 电子冷响应
     !                    4: 热等离子体，离子和电子都采用动力学响应
-    iswitch_dielectric=3
+    !<4namelist>iswitch_dielectric=3
+
     !k_closure_type=1: 每一点用 find_kfc 闭合 k_parallel
     !               =0: 每一点用常数 k_constant 闭合 k_parallel
     k_closure_type=1
@@ -30,11 +36,11 @@ subroutine ini
     !                    = 1, right helical
     !                    = 2, half loop
     !                    = 3, Nagoya type-III
-    iswitch_antenna_type=1
+    !<4namelist>iswitch_antenna_type=1
 
     !important: this version only tests i_switch_power_mode=0. !!!
-    i_switch_power_mode=0; !1:set constant total power; 0: set constant current Irf
-    irf_set=500;          !A    use when i_switch_power_mode=0;
+    !<4namelist>i_switch_power_mode=0; !1:set constant total power; 0: set constant current Irf
+    !<4namelist>irf_set=500;          !A    use when i_switch_power_mode=0;
     power=1e3;             !W    use when i_switch_power_mode=1;
     resistance=1        !ohm, antenna resistance,   use when i_switch_power_mode=1;
 

@@ -146,12 +146,23 @@ module the_whole_varibles
     real*8 :: tell_uni = 3.0 ! eV
     real*8 :: t2pp_uni = 3.0 ! eV
     ! change
+
+    character(len=256) :: nmlfile
+    character(len=256) :: outputDir
+
+    integer*4 :: mTruncation
     
 end module the_whole_varibles
 
 Program hypic
     use the_whole_varibles
     implicit none
+
+    call get_command_argument(1, nmlfile)
+    if (argc < 1) then
+        print *, "Usage: app.exe input.nml"
+        stop
+    end if
 
     call start_ftime
 

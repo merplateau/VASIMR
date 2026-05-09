@@ -7,7 +7,7 @@ subroutine fdfd_ini
         m_end=-m_start
         m_delta=+2
     else
-        m_start=-1
+        m_start=-mTruncation
         m_end=-m_start
         m_delta=+1
     endif

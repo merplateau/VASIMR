@@ -3,6 +3,18 @@ subroutine grid_ini
     implicit none
     integer::ir1,ir2,ir3,iz1,iz2,i1,i2,i4
 
+    real*8 :: r_var_1, r_met_1, z_vac_1
+    integer :: nmlid
+
+    namelist /gridConfig/ &
+        & r_var_1, &
+        & r_met_1, &
+        & z_vac_1
+
+    open(newunit=nmlid, file=trim(nmlfile), status="old")
+    read(nmlid, nml=gridConfig)
+    close(nmlid)    
+
     nr=101
     nz=301
 
@@ -13,9 +25,12 @@ subroutine grid_ini
     allocate (nr_vac(n_vac),nz_vac(n_vac),nr_met(n_vac),nz_met(n_vac))
 
     i_vac=1
-    r_vac(i_vac)=0.07
-    r_met(i_vac)=0.2
-    z_vac(i_vac)=0.5
+    !r_vac(i_vac)=0.07 !@namelist
+    r_vac(i_vac)=r_var_1
+    !r_met(i_vac)=0.2 !@namelist
+    r_met(i_vac)=r_met_1
+    !z_vac(i_vac)=0.5 !@namelist
+    z_vac(i_vac)=z_vac_1
 
 
     !plasma region

@@ -9,6 +9,10 @@ subroutine initialize
     !<4namelist>
     namelist /ini/ &
         & np_max, &
+        & till_uni, &
+        & tipp_uni, &
+        & tell_uni, &
+        & t2pp_uni, &
         & iswitch_analytic_profile, &
         & iswitch_dielectric, &
         & iswitch_antenna_type, &
@@ -34,13 +38,17 @@ subroutine initialize
     !np_max = 10000 !@namelist
     
     allocate(np(1:np_max))
-    allocate(life_and_ek(1:np_max,1:2)),life_and_ek=0.
+    allocate(life_and_ek(1:np_max,1:2))
+    life_and_ek=0.
     allocate(ir1_iz1_grid(1:np_max,1:2))
     allocate(x(1:np_max,1:3))
     allocate(v(1:np_max,1:3))
     allocate(v_e(1:np_max,1:3))
     allocate(t_np(1:np_max))
     allocate(x_to_grid(1:np_max,1:2))
+    np_loss_rec = np_max
+    allocate(xv_loss(1:np_loss_rec,1:7))
+    xv_loss=0.
     
 
     !till_uni = 3.0 !@namelist

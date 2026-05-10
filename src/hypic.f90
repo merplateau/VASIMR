@@ -98,8 +98,10 @@ module the_whole_varibles
     Real*8 :: func_time(1:10)=0, time_diff(1:2)=0,fun_te_time(1:10)=0,time_te_diff(1:2)=0
     Real*8 :: tau_E_ave=1e-6,tau_p_ave=1e-6
     integer*4:: n_pic,ip_loss_rec=0 ,ip_loss_for_tau_p=0
-    integer,parameter:: np_loss_rec=np_max
-    real*8:: xv_loss(1:np_loss_rec,1:7)=0.,t1_taup=0.
+    integer:: np_loss_rec
+    !real*8:: xv_loss(1:np_loss_rec,1:7)=0.
+    real*8,allocatable :: xv_loss(:,:)
+    real*8:: t1_taup=0.
     real*8, allocatable :: life_and_ek(:,:)
     real*8 :: Ek_total_last_joules
 

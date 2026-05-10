@@ -9,17 +9,29 @@ subroutine antenna
     real*8 :: j_loop_nor,j_helical_nor !ja_value_nor,
     integer iswitch_right_antenna,nz1_right,nz2_right
 
+    namelist /antennaConfig/ &
+        & ra, &
+        & za, &
+        & width_r, &
+        & width_z, &
+        & width_th, &
+        & la
+    
+    open(newunit=nmlid, file=trim(nmlfile), status="old")
+    read(nmlid, nml=antennaCOnfig)
+    close(nmlid)
+
     !1-on  0-off: another antenna (f=frequency) symmetrical to the main antenna.
     iswitch_right_antenna=0;
     
     !antenna set
-    ra=0.075
-    za=0.00
-    width_r=0.01
-    width_z=0.04
-    width_th=width_z;
-    !la=0.1     !---only for helical and Nagoya antenna---!
-    la=0.2
+    !ra=0.075 !@namelist
+    !za=0.00 !@namelist
+    !width_r=0.01 !@namelist
+    !width_z=0.04 !@namelist
+    !width_th=width_z; !@namelist
+    !la=0.1 !@namelist
+    !---only for helical and Nagoya antenna---!
 
     if(iswitch_RF2==1 .and. mod(maxwellcount,2)==1)then
         za=-0.17

@@ -22,6 +22,7 @@ subroutine initialize
         & n_pic, &
         & z_inject_cener, &
         & mTruncation, &
+        & z_resonance, &
         & outputDir, &
         & b0Dir, &
         & kapDir, &
@@ -143,7 +144,8 @@ subroutine initialize
     width_ne_source_r=0.005
     width_ne_source_z=0.05
     r_resonance=r_inject_cener !m, radial resonant position,usually set r_resonance=r_inject_cener
-    z_resonance=za             !m,  axial resonant position,usually set z_resonance=za
+    ! z_resonance=za !@namelist 
+    !m,  axial resonant position,usually set z_resonance=za
     
     if(use_file_defined_density==1)then
         call set_ne_Te_ini_file

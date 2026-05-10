@@ -149,6 +149,9 @@ module the_whole_varibles
 
     character(len=256) :: nmlfile
     character(len=256) :: outputDir
+    character(len=256) :: b0Dir
+    character(len=256) :: kapDir
+    character(len=256) :: plasmaLoadDir
 
     integer*4 :: mTruncation
     
@@ -157,16 +160,18 @@ end module the_whole_varibles
 Program hypic
     use the_whole_varibles
     implicit none
+    integer :: argc
 
-    call get_command_argument(1, nmlfile)
+    argc = command_argument_count()
     if (argc < 1) then
         print *, "Usage: app.exe input.nml"
         stop
     end if
+    call get_command_argument(1, nmlfile)
 
     call start_ftime
 
-    call ini
+    call initialize
 
     if (iswitch_analytic_profile == 1) then
         call readProfileFromFile

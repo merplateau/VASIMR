@@ -1,7 +1,7 @@
-subroutine ini
+subroutine initialize
     use the_whole_varibles
     implicit none
-    integer:: I_r,I_z,i1,i2
+    integer:: I_r,I_z,i1,i2,nmlid
     real*8  r_resonance,z_resonance,b0_set
     real*8  total_cycles,tau_ion_predicted
 
@@ -17,7 +17,10 @@ subroutine ini
         & n_pic, &
         & z_inject_cener, &
         & mTruncation, &
-        & outputDir
+        & outputDir, &
+        & b0Dir, &
+        & kapDir, &
+        & plasmaLoadDir
 
     call start_ftime
 
@@ -191,9 +194,9 @@ subroutine ini
 
 
     call rec_para
-    open (unit=42,file='1time_average.dat',status='unknown',iostat=ierror)
-    open (unit=43,file='1time_trajectory.dat',status='unknown',iostat=ierror)
-end subroutine ini
+    open (unit=42,file=trim(outputDir)//trim('1time_average.dat'),status='unknown',iostat=ierror)
+    open (unit=43,file=trim(outputDir)//trim('1time_trajectory.dat'),status='unknown',iostat=ierror)
+end subroutine initialize
 
 subroutine rec_para
     use the_whole_varibles
@@ -209,7 +212,7 @@ subroutine rec_para
     para(35)=mp;para(36)=me;para(37)=n_macro;para(38)=power;para(39)=m_end;para(40)=rp
 
 502 format(e12.4,' ')
-    open (unit=75,file='1parameter.dat',status='unknown',iostat=ierror)
+    open (unit=75,file=trim(outputDir)//trim('1parameter.dat'),status='unknown',iostat=ierror)
     write (75,502)para
     close(75)
 end subroutine rec_para
@@ -525,7 +528,7 @@ subroutine readProfileFromFile
     !4: total power_depo_rthz
 
 202 format(<nr>(e12.5,' '))
-    open (unit=2006,file='plasma_load.dat',status='old',action='read',iostat=ierror)
+    open (unit=2006,file=trim(plasmaLoadDir),status='old',action='read',iostat=ierror)
     read (2006,202)plasma_load
     close(2006)
 
@@ -542,7 +545,7 @@ subroutine readKapFromFile
     implicit none
 
 203 format(<nr>(e12.5,' '))
-    open (unit=2007,file='kap.dat',status='old',action='read',iostat=ierror)
+    open (unit=2007,file=trim(kapDir),status='old',action='read',iostat=ierror)
     read (2007,*)kap_ll_read_raw
     close(2007)
 

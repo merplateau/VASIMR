@@ -253,13 +253,13 @@ subroutine update_and_calculate
     
     !将计算出的、包含微小噪音的复数电场数组 e_int 的实部和虚部分别写入到一个临时文本文件 Erf_tmp.txt 中。在写入的过程中，强制使用了 e12.5 格式。这导致所有数据都被截断，只保留了小数点后5位。那些存在于第10位或第15位小数的、不确定的噪音，在这个过程中被彻底抹掉。
 301 format(<nr>(e12.5,' '))
-    open (unit=201,file='Erf_tmp.txt',status='unknown',iostat=ierror)
+    open (unit=201,file=trim(outputDir)//trim('Erf_tmp.txt'),status='unknown',iostat=ierror)
     do itp=1,3
         write (201,301)real(e_int(1:nr,1:nz,itp))
         write (201,301)imag(e_int(1:nr,1:nz,itp))
     enddo
     close(201)
-    open (unit=2001,file='Erf_tmp.txt',status='old',action='read',iostat=ierror)
+    open (unit=2001,file=trim(outputDir)//trim('Erf_tmp.txt'),status='old',action='read',iostat=ierror)
     read (2001,301)Erf_tmp
     close(2001)
     Erf_PIC=0.

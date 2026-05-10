@@ -261,6 +261,7 @@ subroutine record_profiles
     implicit none
     real*8::Es_z(1:nz),density_in_z(1:nz),ek_ave(1:nz,1:3) !v_abs(1:np_max),z_p(1:np_max),ion_r(1:np_max),
     character*30 fname
+    character*256 fullpath
     call find_func_cputime_1_of_2  !-------------------1/2
     if(mod(t,t_rec_profiles)<dt .or. it==1)then
         call escape_and_inject
@@ -270,7 +271,8 @@ subroutine record_profiles
         !---------------------------record the whole data at specific time---------------------------!
         write (fname,120)ifig
 120     format('plasma_',i0,'.dat')
-        open (unit=20,file=fname,status='unknown',iostat=ierror)
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=20,file=fullpath,status='unknown',iostat=ierror)
         write (20,300)real(i_plasma_region(1:nr,1:nz))
         write (20,300)ni(1:nr,1:nz)
         write (20,300)te_in_FDFD(1:nr,1:nz)
@@ -279,7 +281,8 @@ subroutine record_profiles
 
         write (fname,121)ifig
 121     format('rf_field_',i0,'.dat')
-        open (unit=21,file=fname,status='unknown',iostat=ierror)
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=21,file=fullpath,status='unknown',iostat=ierror)
         do itp=1,6
             write (21,300)abs(Erf6(1:nr,1:nz,itp))
         enddo
@@ -295,7 +298,8 @@ subroutine record_profiles
 322     format(<nz>(e12.5,' '))
 122     format('Ek_ave_z_',i0,'.dat')
         write (fname,122)ifig
-        open (unit=22,file=fname,status='unknown',iostat=ierror)
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=22,file=fullpath,status='unknown',iostat=ierror)
         write (22,322)z
         write (22,322)density_in_z
         write (22,322)ek_ave
@@ -305,7 +309,8 @@ subroutine record_profiles
 323     format(<np_max>(e12.5,' '))
 123     format('ion_rz_',i0,'.dat')
         write (fname,123)ifig
-        open (unit=23,file=fname,status='unknown',iostat=ierror)
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=23,file=fullpath,status='unknown',iostat=ierror)
         write (23,323)sqrt(x(1:np_max,1)**2+x(1:np_max,2)**2 )!ion_r(1:np_max)
         write (23,323)x(1:np_max,3)
         write (23,323)v(1:np_max,1)
@@ -318,7 +323,8 @@ subroutine record_profiles
 
 124     format('density_Es_2D_',i0,'.dat')
         write (fname,124)ifig
-        open (unit=24,file=fname,status='unknown',iostat=ierror)
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=24,file=fullpath,status='unknown',iostat=ierror)
         write (24,300)density_2D
         write (24,300)Es_2D(:,:,1)
         write (24,300)Es_2D(:,:,2)
@@ -337,7 +343,8 @@ subroutine record_profiles
 
 125     format('Erf_all_m_',i0,'.dat')
         write (fname,125)ifig
-        open (unit=25,file=fname,status='unknown',iostat=ierror)
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=25,file=fullpath,status='unknown',iostat=ierror)
         do m=m_start,m_end
             do itp=1,3
                 write (25,300)real(e_output(m,1:nr,1:nz,itp))
@@ -348,7 +355,8 @@ subroutine record_profiles
         
 126     format('xv_loss_',i0,'.dat')
         write (fname,126)ifig
-        open (unit=26,file=fname,status='unknown',iostat=ierror)
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=26,file=fullpath,status='unknown',iostat=ierror)
         write (26,301)xv_loss
         close(26)
         

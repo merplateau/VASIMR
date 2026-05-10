@@ -322,28 +322,28 @@ subroutine background_b0
 
 30  format(<mr>(e12.4,' '))
 31  format(<mz>(e12.4,' '))
-    open (unit=101,file='2for_plot_B0.txt',status='unknown',iostat=ierror)
+    open (unit=101,file=trim(outputDir)//trim('2for_plot_B0.txt'),status='unknown',iostat=ierror)
     write (101,30)B_c(:,:,1)
     write (101,30)B_c(:,:,2)
     write (101,30)A_th
     close (101)
 
-    open (unit=103,file='2for_plot_r_B0.txt',status='unknown',iostat=ierror)
+    open (unit=103,file=trim(outputDir)//trim('2for_plot_r_B0.txt'),status='unknown',iostat=ierror)
     write (103,30)r_b0
     close (103)
-    open (unit=104,file='2for_plot_z_B0.txt',status='unknown',iostat=ierror)
+    open (unit=104,file=trim(outputDir)//trim('2for_plot_z_B0.txt'),status='unknown',iostat=ierror)
     write (104,31)z_b0
     close (104)
 
     continue
 
 32  format(<nr>(e12.4,' '))
-    open (unit=106,file='B0_load.txt',status='unknown',iostat=ierror)
+    open (unit=106,file=trim(outputDir)//trim('B0_load.txt'),status='unknown',iostat=ierror)
     write (106,32)b0_DC(1:nr,1:nz,1)
     write (106,32)b0_DC(1:nr,1:nz,3)
     close (106)
 
-    open (unit=108,file='2for_plot_Ath_iteration.txt',status='unknown',iostat=ierror)
+    open (unit=108,file=trim(outputDir)//trim('2for_plot_Ath_iteration.txt'),status='unknown',iostat=ierror)
     write (108,33)Ath_ite(1:ite)
     close (108)
 
@@ -398,7 +398,7 @@ subroutine load_B0
     !load the existing magnetic field data directly.
 
 202 format(<nr>(e12.4,' '))
-    open (unit=2002,file='B0_load.txt',status='old',action='read',iostat=ierror)
+    open (unit=2002,file=trim(b0Dir),status='old',action='read',iostat=ierror)
     read (2002,202)b0_load
     close(2002)
 

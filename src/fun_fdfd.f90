@@ -369,7 +369,7 @@ subroutine set_A
     iswitch_output_Region=1
 
 
-    if(iswitch_output_Region==1)open(unit=545,file='Region.txt',status='REPLACE',iostat=ierror)
+    if(iswitch_output_Region==1)open(unit=545,file=trim(outputDir)//trim('Region.txt'),status='REPLACE',iostat=ierror)
     Call Find_Region(nr,nz,n_vac,nr_vac,nr_met,nz_vac,FindRegion) !,nrz_diploe,iswtich_inner_dipole
     do ir=1,nr
         do iz=1,nz

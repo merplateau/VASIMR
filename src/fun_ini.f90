@@ -8,6 +8,7 @@ subroutine initialize
 
     !<4namelist>
     namelist /ini/ &
+        & np_max, &
         & iswitch_analytic_profile, &
         & iswitch_dielectric, &
         & iswitch_antenna_type, &
@@ -29,6 +30,24 @@ subroutine initialize
     close(nmlid)
 
     call mkdir_if_not_exist
+
+    !np_max = 10000 !@namelist
+    
+    allocate(np(1:np_max))
+    allocate(life_and_ek(1:np_max,1:2)),life_and_ek=0.
+    allocate(ir1_iz1_grid(1:np_max,1:2))
+    allocate(x(1:np_max,1:3))
+    allocate(v(1:np_max,1:3))
+    allocate(v_e(1:np_max,1:3))
+    allocate(t_np(1:np_max))
+    allocate(x_to_grid(1:np_max,1:2))
+    
+
+    !till_uni = 3.0 !@namelist
+    !tipp_uni = 3.0 !@namelist
+    !tell_uni = 3.0 !@namelist
+    !t2pp_uni = 3.0 !@namelist
+    ! eV
 
     !iswitch_analytic_profile = 1 !@namelist
     ! 0: nothing happens

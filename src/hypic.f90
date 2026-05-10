@@ -20,7 +20,7 @@ end module types
 
 module the_whole_varibles
     use types
-    INTEGER*4,PARAMETER ::np_max=10000
+    INTEGER*4 ::np_max
     real*8,parameter ::frequency=600e3,frequency2=20e6,trf=1/frequency;
 
     real*8,parameter:: qe0=1.6022e-19,mp=1.6726231D-27;
@@ -30,7 +30,8 @@ module the_whole_varibles
     real*8,parameter:: qi=charger_number*qe0
     real*8,parameter:: mass_q_i_05=0.5*mi/qi
     real*8,parameter:: q_mass_i=qi/mi
-    INTEGER:: np(1:np_max),i_s
+    INTEGER,allocatable :: np(:)
+    INTEGER :: i_s
 
 
     !---------------constants---------------------!
@@ -99,21 +100,30 @@ module the_whole_varibles
     integer*4:: n_pic,ip_loss_rec=0 ,ip_loss_for_tau_p=0
     integer,parameter:: np_loss_rec=np_max
     real*8:: xv_loss(1:np_loss_rec,1:7)=0.,t1_taup=0.
-    real*8:: life_and_ek(1:np_max,1:2)=0.
+    real*8, allocatable :: life_and_ek(:,:)
     real*8 :: Ek_total_last_joules
 
     !particles
     integer*4,parameter:: iseed=1234567,nrec_t=42,nrec_p=20,te_update_interval=1000
     integer,parameter::nz_length=120
-    integer::ir1_iz1_grid(1:np_max,1:2)
+    integer,allocatable :: ir1_iz1_grid(:,:)
     integer*4::ifig=0
     integer*4::num_inject,it,ip,np_e,N_lost_particles
     real*8:: vtp(1:3),dseed=123457.D0, s_drz
     real*8:: coeff1,t_cyclotron,vi_ex,ve_ex,dt_trf,n_macro
 
     !v: ion velocity; ve: electron velocity; 1:3 -- x y z direction
-    real*8:: x(1:np_max,1:3),v(1:np_max,1:3),v_e(1:np_max,1:3),t_np(1:np_max)
-    real*8:: x_to_grid(1:np_max,1:2)
+    !real*8:: x(1:np_max,1:3)
+    real*8, allocatable :: x(:,:)
+    !real*8:: v(1:np_max,1:3)
+    real*8, allocatable :: v(:,:)
+    !real*8:: v_e(1:np_max,1:3)
+    real*8, allocatable :: v_e(:,:)
+    !real*8:: t_np(1:np_max)
+    real*8, allocatable :: t_np(:)
+    !real*8:: x_to_grid(1:np_max,1:2)
+    real*8, allocatable :: x_to_grid(:,:)
+
     real*8:: rec_t(nrec_t)=0.,rec_p(nrec_p)=0.,vz0,state_power_on_off=0.
     real*8:: Ek_loss_ave(1:4)=0,power_loss_ave(1:4)=0,Ek_loss_tol(1:4)=0.,num_loss(1:4)=1e-2
     real*8, allocatable :: pdf_ne_r(:),pdf_ne_source_r(:),pdf_ne_z(:),pdf_ne_source_z(:),r_particle_inj(:)
@@ -141,10 +151,10 @@ module the_whole_varibles
     real*8, allocatable :: ni_read(:,:)
     real*8, allocatable :: kap_ll_read_raw(:,:)
     complex*16, allocatable :: kap_ll_read(:,:)
-    real*8 :: till_uni = 3.0 ! eV
-    real*8 :: tipp_uni = 3.0 ! eV
-    real*8 :: tell_uni = 3.0 ! eV
-    real*8 :: t2pp_uni = 3.0 ! eV
+    real*8 :: till_uni
+    real*8 :: tipp_uni
+    real*8 :: tell_uni
+    real*8 :: t2pp_uni
     ! change
 
     character(len=256) :: nmlfile

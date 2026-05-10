@@ -8,6 +8,7 @@ subroutine antenna
     complex*16 ::c1,c2
     real*8 :: j_loop_nor,j_helical_nor !ja_value_nor,
     integer iswitch_right_antenna,nz1_right,nz2_right
+    integer :: nmlid
 
     namelist /antennaConfig/ &
         & ra, &

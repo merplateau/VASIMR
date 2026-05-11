@@ -21,7 +21,6 @@ subroutine initialize
         & vz0, &
         & n_pic, &
         & z_inject_cener, &
-        & mTruncation, &
         & z_resonance, &
         & outputDir, &
         & b0Dir, &

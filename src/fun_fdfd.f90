@@ -2,6 +2,17 @@ subroutine fdfd_ini
     use the_whole_varibles
     implicit none
 
+    integer :: nmlid
+
+    namelist /fdfdConfig/ &
+        & mTruncation, &
+        & iswitch_specific_mode, &
+        & m_specific
+
+    open(newunit=nmlid, file=trim(nmlfile), status="old")
+    read(nmlid, nml=fdfdConfig)
+    close(nmlid)
+
     if(iswitch_antenna_type==0)then
         m_start=0
         m_end=-m_start
@@ -10,6 +21,11 @@ subroutine fdfd_ini
         m_start=-mTruncation
         m_end=-m_start
         m_delta=+1
+
+        if(iswitch_specific_mode == 1)then
+            m_start = m_specific
+            m_end = m_specific
+            m_delta=+2
     endif
 
     switch_plasma_vacuum_boundary=43 !switch boundary of plasma-vacuum rp; 0:nothing more; 1:tangent continuous ;2:tangent continuous + Div(E)=0(vacuum);

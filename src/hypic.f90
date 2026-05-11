@@ -166,6 +166,9 @@ module the_whole_varibles
     character(len=256) :: plasmaLoadDir
 
     integer*4 :: mTruncation
+
+    integer :: iswitch_specific_mode
+    integer :: m_specific
     
 end module the_whole_varibles
 

@@ -26,6 +26,7 @@ subroutine fdfd_ini
             m_start = m_specific
             m_end = m_specific
             m_delta=+2
+        end if
     endif
 
     switch_plasma_vacuum_boundary=43 !switch boundary of plasma-vacuum rp; 0:nothing more; 1:tangent continuous ;2:tangent continuous + Div(E)=0(vacuum);

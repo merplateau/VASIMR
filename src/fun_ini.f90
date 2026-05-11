@@ -55,11 +55,6 @@ subroutine initialize
     allocate(xv_loss(1:np_loss_rec,1:7))
     xv_loss=0.
 
-    if (iswitch_analytic_profile == 1) then
-        call readProfileFromFile
-    end if
-
-    call readKapFromFile
 
     !iswitch_dielectric=3 !@namelist
     !iswitch_analytic_temperature = 1 !@namelist
@@ -240,6 +235,12 @@ subroutine initialize
     call rec_para
     open (unit=42,file=trim(outputDir)//trim('1time_average.dat'),status='unknown',iostat=ierror)
     open (unit=43,file=trim(outputDir)//trim('1time_trajectory.dat'),status='unknown',iostat=ierror)
+
+    if (iswitch_analytic_profile == 1) then
+        call readProfileFromFile
+    end if
+
+    call readKapFromFile
 end subroutine initialize
 
 subroutine rec_para

@@ -127,8 +127,6 @@ subroutine find_Dielectric_tensor
         ni = ni_read
     end if
 
-    vl = vl_in_FDFD
-
     ! change
 
     coeff_ompe2= qe_abs*qe_abs/(epson0*me)
@@ -169,7 +167,8 @@ subroutine find_Dielectric_tensor
 
             !-------------start kinetics Kpp---------------!
 
-            vl = 5e4 ! m/s !test
+            !vl = 5e4 ! m/s !test
+            vl = vl_in_FDFD
 
             ti_perp = Ek_ion_2D_r(ir,iz)/1.5;
             ti_ll = (Ek_ion_2D(ir,iz)-Ek_ion_2D_r(ir,iz))/1.5

@@ -17,6 +17,7 @@ subroutine initialize
         & iswitch_dielectric, &
         & iswitch_antenna_type, &
         & irf_set, &
+        & resistance, &
         & i_switch_B0, &
         & vz0, &
         & n_pic, &
@@ -93,7 +94,8 @@ subroutine initialize
     !A    use when i_switch_power_mode=0;
 
     power=1e3;             !W    use when i_switch_power_mode=1;
-    resistance=1        !ohm, antenna resistance,   use when i_switch_power_mode=1;
+    !resistance=1 !@namelist
+    !ohm, antenna resistance,   use when i_switch_power_mode=1;
 
     iswitch_RF2=0        !0 - swtich off RF2
     irf2_set=1.1*irf_set;         !A

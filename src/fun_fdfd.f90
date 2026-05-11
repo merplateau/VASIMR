@@ -127,6 +127,8 @@ subroutine find_Dielectric_tensor
         ni = ni_read
     end if
 
+    vl = vl_in_FDFD
+
     ! change
 
     coeff_ompe2= qe_abs*qe_abs/(epson0*me)

@@ -169,6 +169,8 @@ module the_whole_varibles
 
     integer :: iswitch_specific_mode
     integer :: m_specific
+
+    real*8 :: vl_in_FDFD
     
 end module the_whole_varibles
 

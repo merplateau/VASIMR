@@ -24,6 +24,7 @@ subroutine initialize
         & resistance, &
         & i_switch_B0, &
         & vz0, &
+        & vl_in_FDFD, &
         & n_pic, &
         & z_inject_cener, &
         & z_resonance, &
@@ -127,6 +128,8 @@ subroutine initialize
 
     !vz0=1d1; !@namelist
     !m/s, Ion orientation speed
+
+    !vl_in_FDFD = 5e4 !@namelist
 
     !n_pic=6 !@namelist
     !total number of picture to record, i.e. record data at every td/n_pic

@@ -187,14 +187,6 @@ Program hypic
     call start_ftime
 
     call initialize
-
-    if (iswitch_analytic_profile == 1) then
-        call readProfileFromFile
-        call readKapFromFile
-        iswitch_dielectric=3
-        iswitch_analytic_temperature = 1
-        k_closure_type=2
-    end if
     
     if(iswitch_display/=0) write(*,*)'Fun_ini finished. Fun_fdfd is running.'
     call maxwell_FDFD

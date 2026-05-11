@@ -9,6 +9,10 @@ subroutine initialize
     !<4namelist>
     namelist /ini/ &
         & np_max, &
+        & iswitch_dielectric, &
+        & iswitch_analytic_temperature, &
+        & k_closure_type, &
+        & k_constant, &
         & till_uni, &
         & tipp_uni, &
         & tell_uni, &
@@ -50,6 +54,20 @@ subroutine initialize
     np_loss_rec = np_max
     allocate(xv_loss(1:np_loss_rec,1:7))
     xv_loss=0.
+
+    if (iswitch_analytic_profile == 1) then
+        call readProfileFromFile
+    end if
+
+    call readKapFromFile
+
+    !iswitch_dielectric=3 !@namelist
+    !iswitch_analytic_temperature = 1 !@namelist
+    !k_closure_type=2 !@namelist
+    !k_closure_type =1: 每一点用 find_kfc 闭合 k_parallel
+    !               =0: 每一点用常数 k_constant 闭合 k_parallel
+    !               =2: 每一点用自定义的 kap 文件闭合 k_parallel
+    !k_constant=20.0d0 !@namelist
     
 
     !till_uni = 3.0 !@namelist
@@ -72,10 +90,6 @@ subroutine initialize
     !                    4: 热等离子体，离子和电子都采用动力学响应
     !iswitch_dielectric=3 !@namelist
 
-    !k_closure_type=1: 每一点用 find_kfc 闭合 k_parallel
-    !               =0: 每一点用常数 k_constant 闭合 k_parallel
-    k_closure_type=1
-    k_constant=20.0d0
     use_file_defined_density=0 !0-Gaussian profile; 1- read from file
 
     !iswitch_antenna_type= 0, single loop

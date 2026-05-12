@@ -260,10 +260,20 @@ subroutine record_profiles
     USE the_whole_varibles
     implicit none
     real*8::Es_z(1:nz),density_in_z(1:nz),ek_ave(1:nz,1:3) !v_abs(1:np_max),z_p(1:np_max),ion_r(1:np_max),
+    integer*4 :: trigger
+    integer*4 :: acc_number
     character*30 fname
     character*256 fullpath
     call find_func_cputime_1_of_2  !-------------------1/2
+    if((mod(t,(t_rec_profiles-1*trf))<dt) .and. it>1)then
+        trigger = 1
+        acc_number=0
+        ek_x=0.
+        density_x=0.
+    endif
+    call find_Ek_1D_new(density_in_z,ek_ave,acc_number)
     if(mod(t,t_rec_profiles)<dt .or. it==1)then
+        trigger = 0
         call escape_and_inject
         !call escape_periodicity !energy conservation
 300     format(<nr>(e12.5,' '))
@@ -292,7 +302,11 @@ subroutine record_profiles
         do iz=1,nz
             Es_z(iz)=sum(Es_2D(:,iz,2))/nr
         enddo
-        call find_Ek_1D(density_in_z,ek_ave)
+        !call find_Ek_1D(density_in_z,ek_ave)
+
+        ek_x=ek_x/(real(acc_number))
+        density_x=density_x/(real(acc_number))
+        trigger = 0
 
 
 322     format(<nz>(e12.5,' '))
@@ -406,6 +420,56 @@ subroutine find_Ek_1D(density_x,ek_x) !,x_p,v_innz,np_max,z,
     enddo
     density_x=density_x/(pi*rp**2*dz)
 end subroutine find_Ek_1D
+
+subroutine find_Ek_1D_new(density_x,ek_x,acc_number) !,x_p,v_innz,np_max,z,
+    USE the_whole_varibles
+    implicit none
+    !integer::np_max,nzip,
+    integer::ix1,ix2,I_x,i_comp
+    real*8::ek_x(1:nz,1:3),density_x(1:nz) !,x_p(np_max),v_in(1:np_max,1:3),z(1:nz)dz,
+    real*8::ek_x_inter(1:nz,1:3),density_x_inter(1:nz)
+    real*8::xtp,s1,s2,min_x,dx_tp1,dx_tp2
+    integer*4 :: acc_number
+    
+    if(trigger = 1) then
+    
+    acc_number=acc_number+1
+    
+    ek_x_inter=0.
+    density_x_inter=1e-5
+
+    do ip=1,np_max
+        xtp=x(ip,3)
+        I_x=minloc(abs(xtp-z),1);
+        min_x=xtp-z(I_x);
+        if (min_x<0)then
+            ix1=I_x-1;
+            ix2=I_x;
+        else
+            ix1=I_x;
+            ix2=I_x+1;
+        endif
+        if(ix1<1)ix1=1
+        if(ix2>nz)ix2=nz
+        dx_tp1=abs(xtp-z(ix1)); !note abs()
+        s1=dx_tp1/dz;
+        s2=1.-s1;
+
+        ek_x_inter(ix1,1:3)=ek_x_inter(ix1,1:3)+s2*mass_q_i_05*v(ip,1:3)**2
+        ek_x_inter(ix2,1:3)=ek_x_inter(ix2,1:3)+s1*mass_q_i_05*v(ip,1:3)**2
+        density_x_inter(ix1)=density_x_inter(ix1)+s2
+        density_x_inter(ix2)=density_x_inter(ix2)+s1
+    enddo
+    do ix1=1,3
+        ek_x_inter(:,ix1)=ek_x_inter(:,ix1)/density_x_inter
+    enddo
+    density_x_inter=density_x_inter/(pi*rp**2*dz)
+    
+    ek_x=ek_x+ek_x_inter
+    density_x=density_x+density_x_inter
+    
+    endif
+end subroutine find_Ek_1D_new
 
 subroutine start_ftime
     USE the_whole_varibles

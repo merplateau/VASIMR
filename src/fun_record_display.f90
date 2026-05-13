@@ -259,19 +259,30 @@ end subroutine rec_time_trajectory
 subroutine record_profiles
     USE the_whole_varibles
     implicit none
-    real*8::Es_z(1:nz),density_in_z(1:nz),ek_ave(1:nz,1:3) !v_abs(1:np_max),z_p(1:np_max),ion_r(1:np_max),
-    integer*4 :: trigger
-    integer*4 :: acc_number
+    real*8::Es_z(1:nz) !v_abs(1:np_max),z_p(1:np_max),ion_r(1:np_max),
+    real*8, allocatable, save :: density_in_z(:),ek_ave(:,:)
+    integer*4, save :: trigger=0
+    integer*4, save :: acc_number=0
     character*30 fname
     character*256 fullpath
     call find_func_cputime_1_of_2  !-------------------1/2
-    if((mod(t,(t_rec_profiles-1*trf))<dt) .and. it>1)then
+
+    if(.not. allocated(density_in_z))then
+        allocate(density_in_z(1:nz))
+        allocate(ek_ave(1:nz,1:3))
+        density_in_z=0.
+        ek_ave=0.
+        acc_number=0
+        trigger=0
+    endif
+
+    if((mod((t+trf),(t_rec_profiles))<dt) .and. it>1 .and. trigger==0)then
         trigger = 1
         acc_number=0
-        ek_x=0.
-        density_x=0.
+        ek_ave=0.
+        density_in_z=0.
     endif
-    call find_Ek_1D_new(density_in_z,ek_ave,acc_number)
+    call find_Ek_1D_new(density_in_z,ek_ave,acc_number,trigger)
     if(mod(t,t_rec_profiles)<dt .or. it==1)then
         trigger = 0
         call escape_and_inject
@@ -304,8 +315,12 @@ subroutine record_profiles
         enddo
         !call find_Ek_1D(density_in_z,ek_ave)
 
-        ek_x=ek_x/(real(acc_number))
-        density_x=density_x/(real(acc_number))
+        if(acc_number>0)then
+            ek_ave=ek_ave/(real(acc_number))
+            density_in_z=density_in_z/(real(acc_number))
+        else
+            call find_Ek_1D(density_in_z,ek_ave)
+        endif
         trigger = 0
 
 
@@ -421,7 +436,7 @@ subroutine find_Ek_1D(density_x,ek_x) !,x_p,v_innz,np_max,z,
     density_x=density_x/(pi*rp**2*dz)
 end subroutine find_Ek_1D
 
-subroutine find_Ek_1D_new(density_x,ek_x,acc_number) !,x_p,v_innz,np_max,z,
+subroutine find_Ek_1D_new(density_x,ek_x,acc_number,trigger) !,x_p,v_innz,np_max,z,
     USE the_whole_varibles
     implicit none
     !integer::np_max,nzip,
@@ -429,9 +444,9 @@ subroutine find_Ek_1D_new(density_x,ek_x,acc_number) !,x_p,v_innz,np_max,z,
     real*8::ek_x(1:nz,1:3),density_x(1:nz) !,x_p(np_max),v_in(1:np_max,1:3),z(1:nz)dz,
     real*8::ek_x_inter(1:nz,1:3),density_x_inter(1:nz)
     real*8::xtp,s1,s2,min_x,dx_tp1,dx_tp2
-    integer*4 :: acc_number
+    integer*4 :: acc_number,trigger
     
-    if(trigger = 1) then
+    if(trigger == 1) then
     
     acc_number=acc_number+1
     

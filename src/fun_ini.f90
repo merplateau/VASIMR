@@ -18,7 +18,6 @@ subroutine initialize
         & tell_uni, &
         & t2pp_uni, &
         & iswitch_analytic_profile, &
-        & iswitch_dielectric, &
         & iswitch_antenna_type, &
         & irf_set, &
         & resistance, &

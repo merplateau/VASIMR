@@ -124,17 +124,18 @@ subroutine display_main
         
         else if (iswitch_log == 1) then
             if (.not. first_log_display) then
-                write(*,'(a)',advance='no') esc//'[4A'
+                write(*,'(a)',advance='no') esc//'[5A'
             endif
-
-            write(*, "(a,'running at', f0.2,' % (estimating ',f0.2,' hours left)')") &
+            
+            write(*, "(a,'------------------------------------------------------------------------')") esc//'[2K'
+            write(*, "(a,'running at ', f0.2,' % (estimating ',f0.2,' hours left)')") &
                 esc//'[2K', tp1*100, time_run/60./tp1*(1-tp1)
-            write(*, "(a,'(absorbed)  plasma loading =', I0, ' mOhm')") &
+            write(*, "(a,'(absorbed)  plasma loading = ', I0, ' mOhm')") &
                 esc//'[2K', nint(2*absorbed_power/(irf_set**2)*1e3)
-            write(*, "(a,'(deposited) plasma loading =', I0, ' mOhm')") &
+            write(*, "(a,'(deposited) plasma loading = ', I0, ' mOhm')") &
                 esc//'[2K', nint(ptotal/(irf_set**2)*1e3)
             write(*, "(a,'recorded ', I0, ' of ', I0)") &
-                esc//'[2K', n_pic,ifig-1
+                esc//'[2K', ifig-1,n_pic
 
             first_log_display=.false.
             

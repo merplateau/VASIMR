@@ -37,85 +37,97 @@ subroutine display_main
         enddo
 
         tp1=t/td;
-        write(*,*)'------------------------------------------------------------------------'
-        write(*, "('--------- The start time is ', i4,'.',i2,'.',i2,' ',i2.2,':',i2.2,'-------')") date_time(1:3,1),date_time(5:6,1)
-        write(*, "('--------- The time now is  ', i4,'.',i2,'.',i2,' ',i2.2,':',i2.2,'-------')") date_time(1:3,2),date_time(5:6,2)
-        write(*, "('--- The calculation time is ', f8.2,'  min (',f8.2,' , hour)----')") time_run,time_run/60.
-        write(*, "(' Program is running at', f12.2,3x,'%   (estimating',f12.2,' hours left )')") tp1*100, time_run/60./tp1*(1-tp1)
-        write(*, "(' total records, already records', 3i5)") n_pic,ifig-1
-        write(*,*)
-        write(*, "(' t=', f7.1,'  trf   (',es9.2,' s)')") t/trf,t
-        write(*, "(' nr, nz=', 2i5)") nr,nz
-        if(iswitch_antenna_type==0) write(*,"('antenna type (',i2, ' ) : single loop ')")iswitch_antenna_type
-        if(iswitch_antenna_type==-1)write(*,"('antenna type : left helical   (',i3, ' )')")iswitch_antenna_type
-        if(iswitch_antenna_type==1) write(*,"('antenna type : right helical   (',i3, ' )')")iswitch_antenna_type
-        if(iswitch_antenna_type==2) write(*,"('antenna type : half loop  (',i3, ' )')")iswitch_antenna_type
-        if(iswitch_antenna_type==3) write(*,"('antenna type : Nagoya type-III  (',i3, ' )')")iswitch_antenna_type
-        write(*, "('azimuthal mode m: [ ',i3,', ',i3,' ]')") m_start,m_end
-        !write(*, "('mass_number=', f7.1,', f=',f7.2,' MHz')") mass_number ,frequency/1e6
-        write(*, "('center B0 =', f7.0,', B_resonance=',f7.1,' G')") 1e4*bz_max, 1e4*B_resonance
-        write(*, "('RF: ,f=',f7.2,' MHz')")frequency/1e6
-        write(*, "('irf, resistance = ',f7.1,' A, ',es10.2,' ohm')")i_now,resistance
-        if(iswitch_RF2 ==  1)then
-            write(*,*)'The RF2 antenna is on:'
-            write(*, "('RF2: ,f=',f7.2,' MHz')")frequency2/1e6
-            write(*, "('irf, resistance = ',f7.1,' A, ',es10.2,' ohm')")irf2_set,resistance
-        endif
-        write(*, "('total power, power_loss, power_Joule= ', 3es10.2,' kW')") &
-            &       (loss_power+power_Joule)/1e3,loss_power/1e3,power_Joule/1e3
-        !统计能量吸收效率
-        write(*, "('total absorbed power =', es10.2,' kW')") absorbed_power/1e3
-        write(*, "('plasma absorped power efficiency =', f7.1,' %')") 100*absorbed_power/(absorbed_power+power_Joule+1e-10)
 
-        write(*,*)
-        write(*, "('triple product(n*T_i*Tau_E) =', es10.2,' m^-3*keV*s')")rec_t(40)
-        write(*, "('Tau_E =', es10.2,' s,  ','Tau_p =', es10.2,' s')") tau_E_ave,tau_p_ave
-        write(*,*) '   trf,     dt,    dt_mcc,  t_power_on, td'
-        write(*, "(5es9.1, ' s')")   trf,   dt,   minval(dt_mcc),   t_power_on,   td
-        write(*,*) '  i-i,     e-e,     i-e,     e-i   dt_mcc'
-        write(*, "(4es9.1, ' s')")   dt_mcc
-        write(*,*) 'tau_ii,   tau_ee,  tau_ie,   tau_ei, tau_eq (e-i thermal equilibrium time)'
-        write(*, "(5es9.1,'  ~',es9.1, ' s')")tau_ii,tau_ee,tau_ie,tau_ei,minval(tau_eq),maxval(tau_eq)
-        write(*, "('ln_A =', f10.2)") ln_A
-        write(*,*)
+        if(iswitch_log == 0) then
+                    
+            write(*,*)'------------------------------------------------------------------------'
+            write(*, "('--------- The start time is ', i4,'.',i2,'.',i2,' ',i2.2,':',i2.2,'-------')") date_time(1:3,1),date_time(5:6,1)
+            write(*, "('--------- The time now is  ', i4,'.',i2,'.',i2,' ',i2.2,':',i2.2,'-------')") date_time(1:3,2),date_time(5:6,2)
+            write(*, "('--- The calculation time is ', f8.2,'  min (',f8.2,' , hour)----')") time_run,time_run/60.
+            write(*, "(' Program is running at', f12.2,3x,'%   (estimating',f12.2,' hours left )')") tp1*100, time_run/60./tp1*(1-tp1)
+            write(*, "(' total records, already records', 3i5)") n_pic,ifig-1
+            write(*,*)
+            write(*, "(' t=', f7.1,'  trf   (',es9.2,' s)')") t/trf,t
+            write(*, "(' nr, nz=', 2i5)") nr,nz
+            if(iswitch_antenna_type==0) write(*,"('antenna type (',i2, ' ) : single loop ')")iswitch_antenna_type
+            if(iswitch_antenna_type==-1)write(*,"('antenna type : left helical   (',i3, ' )')")iswitch_antenna_type
+            if(iswitch_antenna_type==1) write(*,"('antenna type : right helical   (',i3, ' )')")iswitch_antenna_type
+            if(iswitch_antenna_type==2) write(*,"('antenna type : half loop  (',i3, ' )')")iswitch_antenna_type
+            if(iswitch_antenna_type==3) write(*,"('antenna type : Nagoya type-III  (',i3, ' )')")iswitch_antenna_type
+            write(*, "('azimuthal mode m: [ ',i3,', ',i3,' ]')") m_start,m_end
+            !write(*, "('mass_number=', f7.1,', f=',f7.2,' MHz')") mass_number ,frequency/1e6
+            write(*, "('center B0 =', f7.0,', B_resonance=',f7.1,' G')") 1e4*bz_max, 1e4*B_resonance
+            write(*, "('RF: ,f=',f7.2,' MHz')")frequency/1e6
+            write(*, "('irf, resistance = ',f7.1,' A, ',es10.2,' ohm')")i_now,resistance
+            if(iswitch_RF2 ==  1)then
+                write(*,*)'The RF2 antenna is on:'
+                write(*, "('RF2: ,f=',f7.2,' MHz')")frequency2/1e6
+                write(*, "('irf, resistance = ',f7.1,' A, ',es10.2,' ohm')")irf2_set,resistance
+            endif
+            write(*, "('total power, power_loss, power_Joule= ', 3es10.2,' kW')") &
+                &       (loss_power+power_Joule)/1e3,loss_power/1e3,power_Joule/1e3
+            !统计能量吸收效率
+            write(*, "('total absorbed power =', es10.2,' kW')") absorbed_power/1e3
+            write(*, "('plasma absorped power efficiency =', f7.1,' %')") 100*absorbed_power/(absorbed_power+power_Joule+1e-10)
 
-        write(*, "('T_i =', es10.2,' eV,  ','T_e =', es10.2,' eV')") ti_ave,te_ave
-        write(*, "('<Ek_ion> =', es10.2,' eV,  ','<Ek_ele> =', es10.2,' eV')") Ek_i_ave, Ek_e_ave
-        write(*, "('max te_in_FDFD =', es10.2,' eV,  ','min T_e =', es10.2,' eV')") maxval(te_mhd),minval(te_mhd)
-        write(*, "('average kinetic energy of emitted ions =', es10.2,' eV')") Ek_loss_ave(4)
-        !write(*, "('propulsive efficiency =', f7.1,' %')") 100*(power_loss_ave(2)+power_loss_ave(4))/(sum(power_loss_ave(1:4))+1e-10)
-        write(*,*)
+            write(*,*)
+            write(*, "('triple product(n*T_i*Tau_E) =', es10.2,' m^-3*keV*s')")rec_t(40)
+            write(*, "('Tau_E =', es10.2,' s,  ','Tau_p =', es10.2,' s')") tau_E_ave,tau_p_ave
+            write(*,*) '   trf,     dt,    dt_mcc,  t_power_on, td'
+            write(*, "(5es9.1, ' s')")   trf,   dt,   minval(dt_mcc),   t_power_on,   td
+            write(*,*) '  i-i,     e-e,     i-e,     e-i   dt_mcc'
+            write(*, "(4es9.1, ' s')")   dt_mcc
+            write(*,*) 'tau_ii,   tau_ee,  tau_ie,   tau_ei, tau_eq (e-i thermal equilibrium time)'
+            write(*, "(5es9.1,'  ~',es9.1, ' s')")tau_ii,tau_ee,tau_ie,tau_ei,minval(tau_eq),maxval(tau_eq)
+            write(*, "('ln_A =', f10.2)") ln_A
+            write(*,*)
 
-        write(*, "(' np_max=',i7,' np_max=',i7,',n_macro=',es10.2,', ni_ave_ratio=',es10.2)")np_max,np_max,n_macro,ni_ave_ratio
-        write(*, "(' ni_max=',es9.2,', ni_min=',es9.2,'  m-3')")maxval(density_2D)*n_macro,minval(density_2D)*n_macro
-        write(*, "(' inject, loss number', 2i5)") num_inject,N_lost_particles
-        !write(*, "('function of mcc  has been called  =', f10.1,' times')")run_mcc_times
-        write(*, "('function of FDFD has been called  =', f10.1,' times')")real(maxwellcount)
-        write(*, "('dt/dTe  =', i8)")nrun
-        write(*,*)
+            write(*, "('T_i =', es10.2,' eV,  ','T_e =', es10.2,' eV')") ti_ave,te_ave
+            write(*, "('<Ek_ion> =', es10.2,' eV,  ','<Ek_ele> =', es10.2,' eV')") Ek_i_ave, Ek_e_ave
+            write(*, "('max te_in_FDFD =', es10.2,' eV,  ','min T_e =', es10.2,' eV')") maxval(te_mhd),minval(te_mhd)
+            write(*, "('average kinetic energy of emitted ions =', es10.2,' eV')") Ek_loss_ave(4)
+            !write(*, "('propulsive efficiency =', f7.1,' %')") 100*(power_loss_ave(2)+power_loss_ave(4))/(sum(power_loss_ave(1:4))+1e-10)
+            write(*,*)
 
-        tp1=sum(func_time(1:9))/100.;
-        !write(*, "('cputime of fuction 1 (particles_inject)      =', f7.2,' %')")func_time(1)/tp1
-        write(*, "('cputime of fuction 2 (escape_and_inject and inject)  =', f7.2,' %')")func_time(2)/tp1
-        write(*, "('cputime of fuction 3 (mover->density_and_Es)         =', f7.2,' %')")func_time(3)/tp1
-        write(*, "('cputime of fuction 4 (mover->push_RK4)               =', f7.2,' %')")func_time(4)/tp1
-        if(iswitch_mcc==1)then
-            write(*, "('cputime of fuction 5 (mcc)                           =', f7.2,' %')")func_time(5)/tp1
-        else
-            write(*, "('cputime of fuction 5 (mcc off)                       =', f7.2,' %')")func_time(5)/tp1
-        endif
-        write(*, "('cputime of fuction 6 (record_profiles)               =', f7.2,' %')")func_time(6)/tp1
-        write(*, "('cputime of fuction 7 (display)                       =', f7.2,' %')")func_time(7)/tp1
-        if(i_switch_MHD_Te==1)then
-            write(*, "('cputime of fuction 8 (MHD on)                       =', f7.2,' %')")func_time(8)/tp1
-        else
-            write(*, "('cputime of fuction 8 (MHD off)                   =', f7.2,' %')")func_time(8)/tp1
-        endif
-        write(*, "('cputime of fuction 9 (FDFD)                          =', f7.2,' %')")func_time(9)/tp1
-        write(*,*)
-        write(*,*)
-        write(*,*)
-        write(*,*)
+            write(*, "(' np_max=',i7,' np_max=',i7,',n_macro=',es10.2,', ni_ave_ratio=',es10.2)")np_max,np_max,n_macro,ni_ave_ratio
+            write(*, "(' ni_max=',es9.2,', ni_min=',es9.2,'  m-3')")maxval(density_2D)*n_macro,minval(density_2D)*n_macro
+            write(*, "(' inject, loss number', 2i5)") num_inject,N_lost_particles
+            !write(*, "('function of mcc  has been called  =', f10.1,' times')")run_mcc_times
+            write(*, "('function of FDFD has been called  =', f10.1,' times')")real(maxwellcount)
+            write(*, "('dt/dTe  =', i8)")nrun
+            write(*,*)
+
+            tp1=sum(func_time(1:9))/100.;
+            !write(*, "('cputime of fuction 1 (particles_inject)      =', f7.2,' %')")func_time(1)/tp1
+            write(*, "('cputime of fuction 2 (escape_and_inject and inject)  =', f7.2,' %')")func_time(2)/tp1
+            write(*, "('cputime of fuction 3 (mover->density_and_Es)         =', f7.2,' %')")func_time(3)/tp1
+            write(*, "('cputime of fuction 4 (mover->push_RK4)               =', f7.2,' %')")func_time(4)/tp1
+            if(iswitch_mcc==1)then
+                write(*, "('cputime of fuction 5 (mcc)                           =', f7.2,' %')")func_time(5)/tp1
+            else
+                write(*, "('cputime of fuction 5 (mcc off)                       =', f7.2,' %')")func_time(5)/tp1
+            endif
+            write(*, "('cputime of fuction 6 (record_profiles)               =', f7.2,' %')")func_time(6)/tp1
+            write(*, "('cputime of fuction 7 (display)                       =', f7.2,' %')")func_time(7)/tp1
+            if(i_switch_MHD_Te==1)then
+                write(*, "('cputime of fuction 8 (MHD on)                       =', f7.2,' %')")func_time(8)/tp1
+            else
+                write(*, "('cputime of fuction 8 (MHD off)                   =', f7.2,' %')")func_time(8)/tp1
+            endif
+            write(*, "('cputime of fuction 9 (FDFD)                          =', f7.2,' %')")func_time(9)/tp1
+            write(*,*)
+            write(*,*)
+            write(*,*)
+            write(*,*)
+        
+        else if (iswitch_log == 1) then
+            write(*, "('running at', f0.2,' % (estimating ',f0.2,' hours left)')") tp1*100, time_run/60./tp1*(1-tp1)
+            write(*, "('(absorbed)  plasma loading =', I0, ' mOhm')") nint(2*absorbed_power/(irf_set**2)*1e3)
+            write(*, "('(deposited) plasma loading =', I0, ' mOhm')") nint(ptotal/(irf_set**2)*1e3)
+            write(*, "('recorded ', I0, ' of ', I0)") n_pic,ifig-1
+            
+        end if
+
     endif
     call find_func_cputime_2_of_2(func_time(7))  !-----2/2
 end subroutine display_main

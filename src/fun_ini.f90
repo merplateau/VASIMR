@@ -30,7 +30,8 @@ subroutine initialize
         & outputDir, &
         & b0Dir, &
         & kapDir, &
-        & plasmaLoadDir
+        & plasmaLoadDir, &
+        & iswitch_log
 
     call start_ftime
 

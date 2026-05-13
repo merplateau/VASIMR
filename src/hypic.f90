@@ -171,6 +171,8 @@ module the_whole_varibles
     integer :: m_specific
 
     real*8 :: vl_in_FDFD
+
+    integer*4 :: iswitch_log
     
 end module the_whole_varibles
 

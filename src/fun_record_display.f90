@@ -2,6 +2,8 @@ subroutine display_main
     USE the_whole_varibles
     implicit none
     integer,parameter::n6=6
+    character(len=*),parameter::esc=achar(27)
+    logical,save::first_log_display=.true.
     real*8::r_max(1:n6),tau_eq(1:nr,1:nz),nu_0,veq,loss_power
     call find_func_cputime_1_of_2  !-------------------1/2
 
@@ -121,10 +123,20 @@ subroutine display_main
             write(*,*)
         
         else if (iswitch_log == 1) then
-            write(*, "('running at', f0.2,' % (estimating ',f0.2,' hours left)')") tp1*100, time_run/60./tp1*(1-tp1)
-            write(*, "('(absorbed)  plasma loading =', I0, ' mOhm')") nint(2*absorbed_power/(irf_set**2)*1e3)
-            write(*, "('(deposited) plasma loading =', I0, ' mOhm')") nint(ptotal/(irf_set**2)*1e3)
-            write(*, "('recorded ', I0, ' of ', I0)") n_pic,ifig-1
+            if (.not. first_log_display) then
+                write(*,'(a)',advance='no') esc//'[4A'
+            endif
+
+            write(*, "(a,'running at', f0.2,' % (estimating ',f0.2,' hours left)')") &
+                esc//'[2K', tp1*100, time_run/60./tp1*(1-tp1)
+            write(*, "(a,'(absorbed)  plasma loading =', I0, ' mOhm')") &
+                esc//'[2K', nint(2*absorbed_power/(irf_set**2)*1e3)
+            write(*, "(a,'(deposited) plasma loading =', I0, ' mOhm')") &
+                esc//'[2K', nint(ptotal/(irf_set**2)*1e3)
+            write(*, "(a,'recorded ', I0, ' of ', I0)") &
+                esc//'[2K', n_pic,ifig-1
+
+            first_log_display=.false.
             
         end if
 

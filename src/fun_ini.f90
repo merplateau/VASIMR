@@ -18,6 +18,7 @@ subroutine initialize
         & tell_uni, &
         & t2pp_uni, &
         & iswitch_analytic_profile, &
+        & iswitch_mcc=1, &
         & iswitch_antenna_type, &
         & irf_set, &
         & resistance, &
@@ -78,7 +79,9 @@ subroutine initialize
 
     !-----------------------discharge set-------------------------------!
     iswitch_display=1; !1--the running state display on screen; 0--write into a dat file
-    iswitch_mcc=1  !0-monte carlo collsion off, 1-on  !energy conservation
+    
+    !iswitch_mcc=1 !@namelist
+    !0-monte carlo collsion off, 1-on  !energy conservation
 
     !iswitch_dielectric= 1: 冷等离子体，包含离子和电子电流
     !                    2: 冷等离子体，仅保留电子电流

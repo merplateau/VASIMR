@@ -183,6 +183,9 @@ module the_whole_varibles
     integer*4 :: iswitch_log
 
     integer*4 :: dev_Only4CalMag
+
+    integer*4 :: runHowManyPeriods
+    integer*4 :: runRFonWhichPeriod
     
 end module the_whole_varibles
 

@@ -10,6 +10,8 @@ subroutine initialize
     namelist /ini/ &
         & mass_number, &
         & frequency, &
+        & runHowManyPeriods, &
+        & runRFonWhichPeriod, &
         & np_max, &
         & iswitch_dielectric, &
         & iswitch_analytic_temperature, &
@@ -155,8 +157,12 @@ subroutine initialize
     !n_pic=6 !@namelist
     !total number of picture to record, i.e. record data at every td/n_pic
 
-    td=3.e-3;             !s
-    t_power_on=1e-5;        !s
+    !td=3.e-3; !@namelist indirect
+    !s
+    td = trf * howManyPeriods
+    ! t_power_on=1e-5; !@namelist
+    !s
+    t_power_on =  trf * runRFonWhichPeriod
     t_power_end=td*1.1
     dt_trf=1e-2;!when setting dt_trf=0, set dt according to tau_ion_predicted; others, use the value
     tau_ion_predicted=1e-2 !s, Predicted energy constraint time, or an typical ion existing time, used to find dt only when dt_trf=0.

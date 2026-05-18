@@ -21,15 +21,23 @@ end module types
 module the_whole_varibles
     use types
     INTEGER*4 ::np_max
-    real*8,parameter ::frequency=600e3,frequency2=20e6,trf=1/frequency;
+    ! real*8,parameter :: frequency=600e3 !@namelist
+    real*8 :: frequency
+    ! real*8,parameter :: trf=1/frequency; !@namelist indirect
+    real*8 :: trf
+    real*8,parameter :: frequency2=20e6
 
     real*8,parameter:: qe0=1.6022e-19,mp=1.6726231D-27;
-    real*8,parameter:: mass_number   =40.0;
+    ! real*8,parameter:: mass_number   =40.0; !@namelist
+    real*8 :: mass_number
     real*8,parameter:: charger_number=1.0;
-    real*8,parameter:: mi=mass_number*mp
+    ! real*8,parameter:: mi=mass_number*mp !@namelist indirect
+    real*8 :: mi
     real*8,parameter:: qi=charger_number*qe0
-    real*8,parameter:: mass_q_i_05=0.5*mi/qi
-    real*8,parameter:: q_mass_i=qi/mi
+    ! real*8,parameter:: mass_q_i_05=0.5*mi/qi !@namelist indirect
+    real*8 :: mass_q_i_05
+    ! real*8,parameter:: q_mass_i=qi/mi !@namelist indirect
+    real*8 :: q_mass_i
     INTEGER,allocatable :: np(:)
     INTEGER :: i_s
 

@@ -8,6 +8,8 @@ subroutine initialize
 
     !<4namelist>
     namelist /ini/ &
+        & mass_number, &
+        & frequency, &
         & np_max, &
         & iswitch_dielectric, &
         & iswitch_analytic_temperature, &
@@ -41,6 +43,7 @@ subroutine initialize
 
     call start_ftime
 
+
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=ini)
     close(nmlid)
@@ -52,6 +55,12 @@ subroutine initialize
     call mkdir_if_not_exist
 
     !np_max = 10000 !@namelist
+
+    mi=mass_number*mp
+    mass_q_i_05=0.5*mi/qi
+    q_mass_i=qi/mi
+
+    trf=1/frequency
     
     allocate(np(1:np_max))
     allocate(life_and_ek(1:np_max,1:2))

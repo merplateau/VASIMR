@@ -35,7 +35,7 @@ subroutine initialize
         & plasmaLoadDir, &
         & iswitch_log
     
-    namelist /dev/
+    namelist /dev/ &
         & dev_Only4CalMag
     
 

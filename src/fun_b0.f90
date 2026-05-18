@@ -17,9 +17,10 @@ subroutine background_b0
     real*8  leng_z_coil_1,leng_z_coil_2,leng_z_coil_3,leng_z_coil_4
 
     real*8,allocatable :: coilLen(:),coilHeight(:),coilPositionLeft(:),coilPositionBottom(:),coilCurrent(:)
+    integer*4 :: nmlid
 
 
-    namelist /magConfig1/
+    namelist /magConfig1/ &
         & N_coils
     
     open(newunit=nmlid, file=trim(nmlfile), status="old")
@@ -28,7 +29,7 @@ subroutine background_b0
     
     allocate(coilLen(N_coils),coilHeight(N_coils),coilPositionLeft(N_coils),coilPositionBottom(N_coils),coilCurrent(N_coils))
     
-    namelist /magConfig2/
+    namelist /magConfig2/ &
         & coilLen, &
         & coilHeight, &
         & coilPositionLeft, &

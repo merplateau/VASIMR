@@ -159,7 +159,7 @@ subroutine initialize
 
     !td=3.e-3; !@namelist indirect
     !s
-    td = trf * howManyPeriods
+    td = trf * runHowManyPeriods
     ! t_power_on=1e-5; !@namelist
     !s
     t_power_on =  trf * runRFonWhichPeriod

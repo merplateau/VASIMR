@@ -23,6 +23,7 @@ subroutine initialize
         & irf_set, &
         & resistance, &
         & i_switch_B0, &
+        & max_density_set, &
         & vz0, &
         & vl_in_FDFD, &
         & n_pic, &
@@ -123,7 +124,7 @@ subroutine initialize
     i_switch_MHD_Te=0;    !1-te_in_FDFD evolution by MHD; 0-te_in_FDFD evolution only by MCC; 2-constant te_in_FDFD
     Te_set=6;            !eV. Note: use only when i_switch_MHD_Te=2
 
-    max_density_set=1e19
+    !max_density_set=1e19 !@namelist
     !m-3, maxium initial plasma density
 
     ti_ini=3;            !eV , initial teamperature of ion

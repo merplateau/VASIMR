@@ -173,6 +173,8 @@ module the_whole_varibles
     real*8 :: vl_in_FDFD
 
     integer*4 :: iswitch_log
+
+    integer*4 :: dev_Only4CalMag
     
 end module the_whole_varibles
 

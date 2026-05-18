@@ -34,11 +34,19 @@ subroutine initialize
         & kapDir, &
         & plasmaLoadDir, &
         & iswitch_log
+    
+    namelist /dev/
+        & dev_Only4CalMag
+    
 
     call start_ftime
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=ini)
+    close(nmlid)
+
+    open(newunit=nmlid, file=trim(nmlfile), status="old")
+    read(nmlid, nml=dev)
     close(nmlid)
 
     call mkdir_if_not_exist
@@ -176,6 +184,9 @@ subroutine initialize
         call load_B0
     elseif(i_switch_B0==3)then
         call background_b0
+        if (dev_Only4CalMag==1) then
+            stop 'Only for calculating magnetic field, stop after background_b0'
+        end if
     else
         b0_DC(:,:,1)=0.
         b0_DC(:,:,2)=0.0D0

@@ -40,7 +40,7 @@ subroutine initialize
         & iswitch_log
 
     namelist /injectionConfig/ &
-        & no_set, &
+        & n0_set, &
         & ntar_set, &
         & deltaNtype, &
         & CrCzType, &
@@ -59,6 +59,10 @@ subroutine initialize
     close(nmlid)
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
+    read(nmlid, nml=injectionConfig)
+    close(nmlid)
+
+    open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=dev)
     close(nmlid)
 
@@ -72,20 +76,6 @@ subroutine initialize
 
     trf=1/frequency
     
-    allocate(np(1:np_max))
-    allocate(life_and_ek(1:np_max,1:2))
-    life_and_ek=0.
-    allocate(ir1_iz1_grid(1:np_max,1:2))
-    allocate(x(1:np_max,1:3))
-    allocate(v(1:np_max,1:3))
-    allocate(v_e(1:np_max,1:3))
-    allocate(t_np(1:np_max))
-    allocate(x_to_grid(1:np_max,1:2))
-    np_loss_rec = np_max
-    allocate(xv_loss(1:np_loss_rec,1:7))
-    xv_loss=0.
-
-
     !iswitch_dielectric=3 !@namelist
     !iswitch_analytic_temperature = 1 !@namelist
     !k_closure_type=2 !@namelist
@@ -167,7 +157,7 @@ subroutine initialize
 
     !td=3.e-3; !@namelist indirect
     !s
-    td = trf * howManyPeriods
+    td = trf * runHowManyPeriods
     ! t_power_on=1e-5; !@namelist
     !s
     t_power_on =  trf * runRFonWhichPeriod
@@ -262,6 +252,9 @@ subroutine initialize
     endif
     
     dt=dt_trf*trf;
+
+    call configure_variable_particles
+    call allocate_particle_arrays
     
     vi_ex=sqrt(qe_abs*ti_ini/mi);     !expectation of vi :  average speed
     ve_ex=sqrt(qe_abs*te_ini/me);     !expectation of ve :  average speed
@@ -291,7 +284,7 @@ subroutine rec_para
     para(1)=nr;para(2)=nz;para(3)=max_density_set;para(4)=density_ave;
     para(5)=rs;para(6)=dr;para(7)=rl;para(8)=zs;para(9)=dz;para(10)=zl;
     para(11)=dt;para(12)=td;para(13)=pn; para(14)=i_now;para(15)=power_Joule;para(16)=bz_max;para(17)=B0_correction_factor
-    para(18)=i_switch_B0; para(19)=t_rec_evolution; para(20)=np_max;
+    para(18)=i_switch_B0; para(19)=t_rec_evolution; para(20)=n_active;
     para(21)=iswitch_RF2;para(23)=dt;para(24)=td;para(25)=trf;
     para(29)=za;para(30)=ra;
     para(31)=z_inject_cener;para(32)=vi_ex;para(33)=ve_ex;para(34)=B_resonance
@@ -419,7 +412,6 @@ subroutine set_ne_Te_ini_file
 
     volume=pi*rp**2*zl
     ni_ave_ratio=ni_int/volume
-    n_macro=volume*ni_ave_ratio*max_density_set/np_max !n_macro=ni_int/np_max
     density_ave=ni_ave_ratio*max_density_set  !m-3
 
 end subroutine set_ne_Te_ini_file
@@ -556,7 +548,6 @@ subroutine set_ne_Te_ini
 
     volume=pi*rp**2*zl
     ni_ave_ratio=ni_int/volume
-    n_macro=volume*ni_ave_ratio*max_density_set/np_max !n_macro=ni_int/np_max
     density_ave=ni_ave_ratio*max_density_set  !m-3
 
 end subroutine set_ne_Te_ini
@@ -589,10 +580,10 @@ subroutine power_ini
     real*8 :: Ek_i_initial, Ek_e_initial
 
     Ek_i_initial = 0.
-    do ip=1,np_max
+    do ip=1,n_active
         Ek_i_initial = Ek_i_initial + mass_q_i_05*sum(v(ip,1:3)**2)
     enddo
-    Ek_e_initial = mass_q_e_05 * sum(v_e(1:np_max,1:3)**2)
+    Ek_e_initial = mass_q_e_05 * sum(v_e(1:n_active,1:3)**2)
 
     Ek_total_initial_joules = (Ek_i_initial + Ek_e_initial) * n_macro * qe_abs
     Ek_total_last_joules = Ek_total_initial_joules
@@ -600,6 +591,87 @@ subroutine power_ini
     Ek_loss_cumulative = 0.0
     absorbed_power = 0.0
 end subroutine power_ini
+
+subroutine configure_variable_particles
+    use the_whole_varibles
+    implicit none
+
+    if (deltaNtype /= 1) then
+        write(*,*) 'FATAL ERROR: only deltaNtype=1 is implemented.'
+        stop 10
+    endif
+    if (CrCzType /= 1) then
+        write(*,*) 'FATAL ERROR: only CrCzType=1 is implemented.'
+        stop 11
+    endif
+    if (n0_set <= 0.0d0) then
+        write(*,*) 'FATAL ERROR: n0_set must be positive.'
+        stop 12
+    endif
+    if (ntar_set < 1.0d0) then
+        write(*,*) 'FATAL ERROR: ntar_set must be at least 1.'
+        stop 13
+    endif
+    if (vz0 <= 0.0d0) then
+        write(*,*) 'FATAL ERROR: vz0 must be positive for inlet injection.'
+        stop 14
+    endif
+
+    Cr = Cr_guess
+    Cz = Cz_guess
+    if (Cr <= 0.0d0 .or. Cz <= 0.0d0) then
+        write(*,*) 'FATAL ERROR: Cr_guess and Cz_guess must be positive.'
+        stop 15
+    endif
+
+    if (zs + vz0 * dt >= zd) then
+        write(*,*) 'FATAL ERROR: inlet injection layer reaches or exceeds zd.'
+        write(*,*) 'zs, zd, vz0*dt = ', zs, zd, vz0 * dt
+        stop 16
+    endif
+
+    n_active = nint(ntar_set)
+    Mig = 2.0d0 * pi * n0_set * rp**2 * zl * Cr * Cz / ntar_set
+    n_macro = Mig
+    deltaN_real = ntar_set * vz0 * dt / (zl * Cz)
+    deltaN = nint(deltaN_real)
+
+    if (n_macro <= 0.0d0) then
+        write(*,*) 'FATAL ERROR: computed n_macro is not positive.'
+        stop 17
+    endif
+    if (deltaN < 1) then
+        write(*,*) 'FATAL ERROR: computed deltaN is smaller than 1.'
+        write(*,*) 'deltaN_real = ', deltaN_real
+        stop 18
+    endif
+
+    n_capacity = max(np_max, n_active + deltaN)
+end subroutine configure_variable_particles
+
+subroutine allocate_particle_arrays
+    use the_whole_varibles
+    implicit none
+
+    allocate(np(1:n_capacity))
+    allocate(life_and_ek(1:n_capacity,1:2))
+    life_and_ek=0.
+    allocate(ir1_iz1_grid(1:n_capacity,1:2))
+    allocate(x(1:n_capacity,1:3))
+    allocate(v(1:n_capacity,1:3))
+    allocate(v_e(1:n_capacity,1:3))
+    allocate(t_np(1:n_capacity))
+    allocate(x_to_grid(1:n_capacity,1:2))
+    x=0.0d0
+    v=0.0d0
+    v_e=0.0d0
+    t_np=0.0d0
+    x_to_grid=0.0d0
+    ir1_iz1_grid=0
+    np_loss_rec = n_capacity
+    allocate(xv_loss(1:np_loss_rec,1:7))
+    xv_loss=0.
+end subroutine allocate_particle_arrays
 
 subroutine readProfileFromFile
     use the_whole_varibles

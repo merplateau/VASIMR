@@ -37,12 +37,12 @@ subroutine mcc_main
     !call find_Qie_by_mcc  !not use
 
     Ek_i_ave=0.
-    do ip=1,np_max
+    do ip=1,n_active
         Ek_i_ave=Ek_i_ave+mass_q_i_05*sum(v(ip,1:3)**2);
     enddo
-    Ek_i_ave=Ek_i_ave/real(np_max) !ev
+    Ek_i_ave=Ek_i_ave/real(n_active) !ev
     
-    Ek_e_ave=mass_q_e_05*sum(v_e(1:np_max,1:3)**2)/real(np_max); !ev
+    Ek_e_ave=mass_q_e_05*sum(v_e(1:n_active,1:3)**2)/real(n_active); !ev
     ti_ave=Ek_i_ave/1.5
     te_ave=Ek_e_ave/1.5
 
@@ -59,14 +59,14 @@ subroutine mcc_tau
     real*8 qa,qb,ma,mb,g2_ave,b0_ave,lambda_D,t_ave,coeff_ne_qe_lnA
 
     ne_mcc=density_ave
-    !Ek_i_ave=mass_q_i_05*sum(v(1:np_max,1:3)**2)/real(np_max); !ev
+    !Ek_i_ave=mass_q_i_05*sum(v(1:np_max,1:3)**2)/real(n_active); !ev
     Ek_i_ave=0.
-    do ip=1,np_max
+    do ip=1,n_active
         Ek_i_ave=Ek_i_ave+mass_q_i_05*sum(v(ip,1:3)**2);
     enddo
-    Ek_i_ave=Ek_i_ave/real(np_max) !ev
+    Ek_i_ave=Ek_i_ave/real(n_active) !ev
     
-    Ek_e_ave=mass_q_e_05*sum(v_e(1:np_max,1:3)**2)/real(np_max); !ev
+    Ek_e_ave=mass_q_e_05*sum(v_e(1:n_active,1:3)**2)/real(n_active); !ev
     ti_ave=Ek_i_ave/1.5
     te_ave=Ek_e_ave/1.5
     t_ave=.5*(ti_ave+te_ave)
@@ -127,7 +127,7 @@ end subroutine mcc_tau
 subroutine mcc_ii(dt_mcc_value)
     use the_whole_varibles
     implicit none
-    integer*4::n_rand(1:np_max),np_d2,i1,i2,itp_3,i_s1,i_s2
+    integer*4::n_rand(1:n_active),np_d2,i1,i2,itp_3,i_s1,i_s2
     real*8 qa,qb,ma,mb,dt_mcc_value
     real*8 ::vv_inj_bef(3),vv_tar_bef(3),vv_inj_aft(3),vv_tar_aft(3)
 
@@ -137,12 +137,12 @@ subroutine mcc_ii(dt_mcc_value)
     mb=mi;
     mu_ab=ma*mb/(ma+mb);
     sab_part=ne_mcc*ln_A/(4*pi)*dt_mcc_value*(qa*qb/(epson0*mu_ab))**2;
-    if(mod(np_max,2)/=0) then
-        np_d2=nint((np_max-1.)/2.)
+    if(mod(n_active,2)/=0) then
+        np_d2=nint((n_active-1.)/2.)
     else
-        np_d2=nint(np_max/2.)
+        np_d2=nint(n_active/2.)
     endif
-    call mcc_randperm(np_max,n_rand,0)
+    call mcc_randperm(n_active,n_rand,0)
 
     do ip=1,np_d2
         i1=n_rand(ip);
@@ -165,7 +165,7 @@ end subroutine mcc_ii
 subroutine mcc_ee(dt_mcc_value)
     use the_whole_varibles
     implicit none
-    integer*4::n_rand(1:np_max),np_d2,i1,i2,itp_3
+    integer*4::n_rand(1:n_active),np_d2,i1,i2,itp_3
     real*8 qa,qb,ma,mb,dt_mcc_value
     real*8 ::vv_inj_bef(3),vv_tar_bef(3),vv_inj_aft(3),vv_tar_aft(3)
 
@@ -175,12 +175,12 @@ subroutine mcc_ee(dt_mcc_value)
     mb=me;
     mu_ab=ma*mb/(ma+mb);
     sab_part=ne_mcc*ln_A/(4*pi)*dt_mcc_value*(qa*qb/(epson0*mu_ab))**2;
-    if(mod(np_max,2)/=0) then
-        np_d2=nint((np_max-1.)/2.)
+    if(mod(n_active,2)/=0) then
+        np_d2=nint((n_active-1.)/2.)
     else
-        np_d2=nint(np_max/2.)
+        np_d2=nint(n_active/2.)
     endif
-    call mcc_randperm(np_max,n_rand,0)
+    call mcc_randperm(n_active,n_rand,0)
 
     do ip=1,np_d2
         i1=n_rand(ip);
@@ -196,7 +196,7 @@ end subroutine mcc_ee
 subroutine mcc_ie(dt_mcc_value)
     use the_whole_varibles
     implicit none
-    integer*4 n_rand1(1:np_max),n_rand2(1:np_max),np_d2,itp_3
+    integer*4 n_rand1(1:n_active),n_rand2(1:n_active),np_d2,itp_3
     real*8 qa,qb,ma,mb,dt_mcc_value
     real*8    vv_inj_bef(3),vv_tar_bef(3),vv_inj_aft(3),vv_tar_aft(3)
 
@@ -206,10 +206,10 @@ subroutine mcc_ie(dt_mcc_value)
     mb=me;
     mu_ab=ma*mb/(ma+mb);
     sab_part=ne_mcc*ln_A/(4*pi)*dt_mcc_value*(qa*qb/(epson0*mu_ab))**2;
-    !call mcc_randperm(np_max,n_rand1,1)
-    !call mcc_randperm(np_max,n_rand2,1)
+    !call mcc_randperm(n_active,n_rand1,1)
+    !call mcc_randperm(n_active,n_rand2,1)
 
-    do ip=1,np_max
+    do ip=1,n_active
         qa=qi
         ma=mi
 
@@ -224,7 +224,7 @@ end subroutine mcc_ie
 subroutine mcc_ei(dt_mcc_value)
     use the_whole_varibles
     implicit none
-    integer*4 n_rand1(1:np_max),n_rand2(1:np_max),np_d2,itp_3
+    integer*4 n_rand1(1:n_active),n_rand2(1:n_active),np_d2,itp_3
     real*8 qa,qb,ma,mb,v_ref,t_ref,dt_mcc_value
     real*8    vv_inj_bef(3),vv_tar_bef(3),vv_inj_aft(3),vv_tar_aft(3)
 
@@ -237,10 +237,10 @@ subroutine mcc_ei(dt_mcc_value)
     t_ref=tau_ei;
     sab_part=v_ref**3*dt_mcc_value/t_ref
     !!sab_part=ne_mcc*ln_A/(4*pi)*dt_mcc_value*(qa*qb/(epson0*mu_ab))**2;
-    !call mcc_randperm(np_max,n_rand1,1)
-    !call mcc_randperm(np_max,n_rand2,1)
+    !call mcc_randperm(n_active,n_rand1,1)
+    !call mcc_randperm(n_active,n_rand2,1)
 
-    do ip=1,np_max
+    do ip=1,n_active
         qb=qi
         mb=mi
 
@@ -379,17 +379,18 @@ end subroutine mcc_constant
 subroutine generate_ve_by_vi_and_Te
     USE the_whole_varibles
     implicit none
-    integer::I_r,I_z,coeff_vth
+    integer::I_r,I_z
+    real*8::coeff_vth
     real*8::rand_0_1,rtp
-    real*8::r_p(1:np_max)
+    real*8::r_p(1:n_active)
 
     coeff_vth=sqrt(qe_abs/me)
 
-    r_p(1:np_max)=sqrt(x(1:np_max,1)**2+x(1:np_max,2)**2)
-    ir1_iz1_grid(1:np_max,1)=int((r_p(1:np_max)-r(1))/dr)+1
-    ir1_iz1_grid(1:np_max,2)=int((x(1:np_max,3)-z(1))/dz)+1
+    r_p(1:n_active)=sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2)
+    ir1_iz1_grid(1:n_active,1)=int((r_p(1:n_active)-r(1))/dr)+1
+    ir1_iz1_grid(1:n_active,2)=int((x(1:n_active,3)-z(1))/dz)+1
 
-    do ip=1,np_max
+    do ip=1,n_active
         ir=ir1_iz1_grid(ip,1)
         iz=ir1_iz1_grid(ip,2)
         ve_ex=coeff_vth*sqrt(te_mhd(ir,iz))

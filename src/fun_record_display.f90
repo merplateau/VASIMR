@@ -17,13 +17,13 @@ subroutine display_main
         !if((mod(t,t_show)<dt .or. it==1) .and. (iswitch_display/=0))then
 
         Ek_i_ave=0.
-        do ip=1,np_max
+        do ip=1,n_active
             Ek_i_ave=Ek_i_ave+mass_q_i_05*sum(v(ip,1:3)**2); !ev
         enddo
-        Ek_e_ave=mass_q_e_05*sum(v_e(1:np_max,1:3)**2); !ev
+        Ek_e_ave=mass_q_e_05*sum(v_e(1:n_active,1:3)**2); !ev
 
-        Ek_i_ave=Ek_i_ave/real(np_max) !ev
-        Ek_e_ave=Ek_e_ave/real(np_max) !ev
+        Ek_i_ave=Ek_i_ave/real(n_active) !ev
+        Ek_e_ave=Ek_e_ave/real(n_active) !ev
         ti_ave=Ek_i_ave/1.5
         te_ave=Ek_e_ave/1.5
 
@@ -91,7 +91,8 @@ subroutine display_main
             !write(*, "('propulsive efficiency =', f7.1,' %')") 100*(power_loss_ave(2)+power_loss_ave(4))/(sum(power_loss_ave(1:4))+1e-10)
             write(*,*)
 
-            write(*, "(' np_max=',i7,' np_max=',i7,',n_macro=',es10.2,', ni_ave_ratio=',es10.2)")np_max,np_max,n_macro,ni_ave_ratio
+            write(*, "(' n_active=',i7,', n_capacity=',i7,', deltaN=',i7,', n_macro=',es10.2)") &
+                & n_active,n_capacity,deltaN,n_macro
             write(*, "(' ni_max=',es9.2,', ni_min=',es9.2,'  m-3')")maxval(density_2D)*n_macro,minval(density_2D)*n_macro
             write(*, "(' inject, loss number', 2i5)") num_inject,N_lost_particles
             !write(*, "('function of mcc  has been called  =', f10.1,' times')")run_mcc_times
@@ -169,7 +170,7 @@ subroutine rec_time_ave
         ek_ave=0.;
         ek_tol=0.;
         ek_x=0.;ek_y=0.;ek_z=0.;
-        do ip=1,np_max
+        do ip=1,n_active
             k1=int((x(ip,3)-z_count)/dzn)+1
             k2=int((x(ip,3)+z_count)/dzn)
             if(k1<0.5)k1=1
@@ -186,11 +187,11 @@ subroutine rec_time_ave
             ek_z=ek_z+tp3
         enddo
         ek_ave(:)=ek_tol(:)/(1e-5+density)
-        ek_x=ek_x/real(np_max)
-        ek_y=ek_y/real(np_max)
-        ek_z=ek_z/real(np_max)
+        ek_x=ek_x/real(n_active)
+        ek_y=ek_y/real(n_active)
+        ek_z=ek_z/real(n_active)
 
-        Ek_e_ave=mass_q_e_05*sum(v_e(1:np_max,1:3)**2)/real(np_max); !ev
+        Ek_e_ave=mass_q_e_05*sum(v_e(1:n_active,1:3)**2)/real(n_active); !ev
 
         ek_acceleration=0
         ip_acceleration=0
@@ -198,7 +199,7 @@ subroutine rec_time_ave
         ek_tp2=0
         ek_tp3=0
         ek_tp4=0
-        do ip=1,np_max
+        do ip=1,n_active
             Ek_ion_tp=0.5/q_mass_i*(v(ip,1)**2+v(ip,2)**2+v(ip,3)**2) !eV
             if (Ek_ion_tp>100.)then
                 ip_acceleration=ip_acceleration+1;
@@ -214,7 +215,7 @@ subroutine rec_time_ave
         ek_ave_=ek_x+ek_y+ek_z
 
         if(sum(power_loss_ave(1:4))>1e-3)then
-            tau_E_ave=(ek_x+ek_y+ek_z)/1.5*np_max*n_macro*qe_abs/sum(power_loss_ave(1:4))
+            tau_E_ave=(ek_x+ek_y+ek_z)/1.5*n_active*n_macro*qe_abs/sum(power_loss_ave(1:4))
         else
             tau_E_ave=1e-6
         endif
@@ -224,7 +225,7 @@ subroutine rec_time_ave
 
         rec_t(1)=t
         rec_t(2)=real(it)
-        rec_t(3)=np_max
+        rec_t(3)=n_active
         rec_t(4)=ek_x
         rec_t(5)=ek_y
         rec_t(6)=ek_z
@@ -261,6 +262,7 @@ subroutine rec_time_trajectory
         call interpolation_E_B(B_mover,E_mover)
         xtp=x(ip,1)
         ytp=x(ip,2)
+        rtp=sqrt(xtp**2+ytp**2)+1e-20
         sinth=ytp/rtp
         costh=xtp/rtp
 
@@ -274,9 +276,12 @@ subroutine rec_time_trajectory
         !rec_p(11)=-E_mover(1)*sinth+E_mover(2)*costh !Eth
         rec_p(12:14)=E_mover(1:3)
 
-        ip=2
-        rec_p(15:17)=x(ip,1:3)
-        rec_p(18:20)=v(ip,1:3)
+        rec_p(15:20)=0.0
+        if(n_active>=2)then
+            ip=2
+            rec_p(15:17)=x(ip,1:3)
+            rec_p(18:20)=v(ip,1:3)
+        endif
         write (43,303)rec_p
     endif
 end subroutine rec_time_trajectory
@@ -310,7 +315,6 @@ subroutine record_profiles
     call find_Ek_1D_new(density_in_z,ek_ave,acc_number,trigger)
     if(mod(t,t_rec_profiles)<dt .or. it==1)then
         trigger = 0
-        call escape_and_inject
         !call escape_periodicity !energy conservation
 300     format(<nr>(e12.5,' '))
 301     format(<np_loss_rec>(e12.5,' '))    
@@ -359,19 +363,18 @@ subroutine record_profiles
         write (22,322)ek_ave
         write (22,322)Es_z
         close(22)
-
-323     format(<np_max>(e12.5,' '))
+323     format(<n_active>(e12.5,' '))
 123     format('ion_rz_',i0,'.dat')
         write (fname,123)ifig
         fullpath=trim(outputDir)//trim(fname)
         open (unit=23,file=fullpath,status='unknown',iostat=ierror)
-        write (23,323)sqrt(x(1:np_max,1)**2+x(1:np_max,2)**2 )!ion_r(1:np_max)
-        write (23,323)x(1:np_max,3)
-        write (23,323)v(1:np_max,1)
-        write (23,323)v(1:np_max,2)
-        write (23,323)v(1:np_max,3)
-        write (23,323)t-life_and_ek(1:np_max,1)
-        write (23,323)life_and_ek(1:np_max,2)
+        write (23,323)sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2 )!ion_r(1:np_max)
+        write (23,323)x(1:n_active,3)
+        write (23,323)v(1:n_active,1)
+        write (23,323)v(1:n_active,2)
+        write (23,323)v(1:n_active,3)
+        write (23,323)t-life_and_ek(1:n_active,1)
+        write (23,323)life_and_ek(1:n_active,2)
         close(23)
         
 
@@ -433,7 +436,7 @@ subroutine find_Ek_1D(density_x,ek_x) !,x_p,v_innz,np_max,z,
     ek_x=0.
     density_x=1e-5
 
-    do ip=1,np_max
+    do ip=1,n_active
         xtp=x(ip,3)
         I_x=minloc(abs(xtp-z),1);
         min_x=xtp-z(I_x);
@@ -478,7 +481,7 @@ subroutine find_Ek_1D_new(density_x,ek_x,acc_number,trigger) !,x_p,v_innz,np_max
     ek_x_inter=0.
     density_x_inter=1e-5
 
-    do ip=1,np_max
+    do ip=1,n_active
         xtp=x(ip,3)
         I_x=minloc(abs(xtp-z),1);
         min_x=xtp-z(I_x);

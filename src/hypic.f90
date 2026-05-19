@@ -186,6 +186,18 @@ module the_whole_varibles
 
     integer*4 :: runHowManyPeriods
     integer*4 :: runRFonWhichPeriod
+
+    real*8 :: Mig
+    real*8 :: deltaN_real
+    integer*4 :: deltaNtype
+    integer*4 :: deltaN
+    integer*4 :: CrCzType
+    real*8 :: Cr_guess,Cz_guess,Cr,Cz
+    real*8 :: n0_set
+    real*8 :: ntar_set
+
+    integer*4 :: n_active
+    integer*4 :: n_capacity
     
 end module the_whole_varibles
 

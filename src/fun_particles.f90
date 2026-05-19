@@ -49,7 +49,7 @@ subroutine particles_initialization
 
     coeff_vx=1;
     ip=1
-    do while (ip<=np_max)
+    do while (ip<=n_active)
         !use PDF and random number to generate specific particle distribution
 
         call interp_position(nr,pdf_ne_r,r,rtp)
@@ -86,16 +86,43 @@ subroutine particles_initialization
             tp3=sqrt(-2*log(tp1))*cos(2*pi*tp2)
             v(ip,3)=vi_ex*tp3+vz0
             v_e(ip,3)=ve_ex*tp3
+            t_np(ip)=0.0d0
+            life_and_ek(ip,1)=0.0d0
+            life_and_ek(ip,2)=mass_q_i_05*sum(v(ip,1:3)**2)
 
             !np_max=np_max+1
             ip=ip+1;
         endif
     end do
     !x_e=x
-    np_e=np_max
+    np_e=n_active
 
     continue
 end subroutine particles_initialization
+
+subroutine set_particle_velocity(ip_set)
+    USE the_whole_varibles
+    implicit none
+    integer*4 :: ip_set
+
+    call random_number(tp1)
+    call random_number(tp2)
+    tp3=sqrt(-2*log(tp1))*cos(2*pi*tp2)
+    v(ip_set,1)=vi_ex*tp3
+    v_e(ip_set,1)=ve_ex*tp3
+
+    call random_number(tp1)
+    call random_number(tp2)
+    tp3=sqrt(-2*log(tp1))*cos(2*pi*tp2)
+    v(ip_set,2)=vi_ex*tp3
+    v_e(ip_set,2)=ve_ex*tp3
+
+    call random_number(tp1)
+    call random_number(tp2)
+    tp3=sqrt(-2*log(tp1))*cos(2*pi*tp2)
+    v(ip_set,3)=vi_ex*tp3+vz0
+    v_e(ip_set,3)=ve_ex*tp3
+end subroutine set_particle_velocity
 
 
 !subroutine particles_inject
@@ -169,6 +196,30 @@ subroutine injection_sub(rtp,x3,v3,v_ex)
     v3(3)=v_ex*tp3+vz0
 end subroutine injection_sub
 
+subroutine injection_inlet_sub(ip_set)
+    USE the_whole_varibles
+    implicit none
+    integer*4 :: ip_set
+    real*8 :: rand_0_1, rtp, th_tp, z_layer
+
+    call interp_position(nrp,pdf_ne_source_r,r_particle_inj,rtp)
+    if(rtp<0)rtp=abs(rtp)
+
+    call random_number(rand_0_1)
+    th_tp=2*pi*rand_0_1
+    x(ip_set,1)=rtp*cos(th_tp)
+    x(ip_set,2)=rtp*sin(th_tp)
+
+    call random_number(rand_0_1)
+    z_layer=vz0*dt*rand_0_1
+    x(ip_set,3)=zs+z_layer
+
+    call set_particle_velocity(ip_set)
+    t_np(ip_set)=t
+    life_and_ek(ip_set,1)=t
+    life_and_ek(ip_set,2)=mass_q_i_05*sum(v(ip_set,1:3)**2)
+end subroutine injection_inlet_sub
+
 subroutine mover
     USE the_whole_varibles
     implicit none
@@ -182,7 +233,7 @@ subroutine mover
     call find_func_cputime_1_of_2  !-------------------1/2
     expt=exp(-i*2*pi*frequency*t)
     expt2=exp(-i*2*pi*frequency2*t)
-    do ip=1,np_max
+    do ip=1,n_active
         call interpolation_E_B(B_mover,E_mover)
         call push_RK4(B_mover,E_mover)
     enddo
@@ -193,14 +244,14 @@ subroutine find_x_to_grid !here x means (x,y,z)
     USE the_whole_varibles
     implicit none
     integer::ir_tp,iz_tp
-    real*8::r_p(1:np_max)
+    real*8::r_p(1:n_active)
 
-    !r: s1= x_to_grid(1:np_max,1),s2=1-s1; z: s3= x_to_grid(1:np_max,2),s4=1-s3;
+    !r: s1= x_to_grid(1:n_active,1),s2=1-s1; z: s3= x_to_grid(1:n_active,2),s4=1-s3;
     x_to_grid=0.
-    r_p(1:np_max)=sqrt(x(1:np_max,1)**2+x(1:np_max,2)**2)
-    ir1_iz1_grid(1:np_max,1)=int((r_p(1:np_max)-r(1))/dr)+1
-    ir1_iz1_grid(1:np_max,2)=int((x(1:np_max,3)-z(1))/dz)+1
-    do ip=1,np_max
+    r_p(1:n_active)=sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2)
+    ir1_iz1_grid(1:n_active,1)=int((r_p(1:n_active)-r(1))/dr)+1
+    ir1_iz1_grid(1:n_active,2)=int((x(1:n_active,3)-z(1))/dz)+1
+    do ip=1,n_active
         ir_tp=ir1_iz1_grid(ip,1)
         iz_tp=ir1_iz1_grid(ip,2)
         x_to_grid(ip,1)=(r_p(ip)-r(ir_tp))/dr
@@ -452,7 +503,7 @@ subroutine density_Ek_2D_sub
     !   x(r,z)
     !  |s1| |s2|
 
-    do ip=1,np_max
+    do ip=1,n_active
         s1=x_to_grid(ip,1)*x_to_grid(ip,2)
         s2=x_to_grid(ip,1)*(1.-x_to_grid(ip,2))
         s3=(1.-x_to_grid(ip,1))*(1.-x_to_grid(ip,2))
@@ -577,46 +628,74 @@ subroutine escape_and_inject
     implicit none
     INTEGER*2::ip2,iloss
     real*8::zb0,rb1,zb1,zb2,rtp,ztp,v2_lim,vtp2!rb3,zb3,rb4,zb4,
+    logical :: lost
     call find_func_cputime_1_of_2  !-------------------1/2
 
     v2_lim=(0.1*c)**2 !when ion velocity >0.1c (light velocity), make it escape.
 
     N_lost_particles=0
-    num_inject=0
-    do ip=1,np_max
+    ip=1
+    do while(ip<=n_active)
         rtp=sqrt(x(ip,1)**2+x(ip,2)**2) !+1e-6;
         vtp2=v(ip,1)**2+v(ip,2)**2+v(ip,3)**2
         ztp=x(ip,3)
+        lost=.false.
         
         if(mass_q_i_05*vtp2>life_and_ek(ip,2)) life_and_ek(ip,2)=mass_q_i_05*vtp2
         
         if     (  ztp<=zs )then
-            call escape_sub2(1)
+            call register_particle_loss(1)
+            lost=.true.
         elseif (  ztp>=zd )then
-            call escape_sub2(2)           
+            call register_particle_loss(2)
+            lost=.true.
         elseif (  rtp>=rp .and. (ztp>zs .or. ztp<zd) )then
-            call escape_sub2(3)
+            call register_particle_loss(3)
+            lost=.true.
         endif        
-        if(  isnan(x(ip,1)) .or. isnan(x(ip,2)) .or. isnan(x(ip,3)) .or.  vtp2>v2_lim .or. &
-            & isnan(v(ip,1)) .or. isnan(v(ip,2)) .or. isnan(v(ip,3))  ) call escape_sub
+        if(.not. lost)then
+            if(  isnan(x(ip,1)) .or. isnan(x(ip,2)) .or. isnan(x(ip,3)) .or.  vtp2>v2_lim .or. &
+                & isnan(v(ip,1)) .or. isnan(v(ip,2)) .or. isnan(v(ip,3))  )then
+                call register_particle_loss(4)
+                lost=.true.
+            endif
+        endif
+
+        if(lost)then
+            call remove_particle(ip)
+        else
+            ip=ip+1
+        endif
     enddo
-    num_inject=N_lost_particles
+    call ensure_particle_capacity(n_active+deltaN)
+    do ip=n_active+1,n_active+deltaN
+        call injection_inlet_sub(ip)
+    enddo
+    n_active=n_active+deltaN
+    np_e=n_active
+    num_inject=deltaN
     call find_func_cputime_2_of_2(func_time(2))  !-----2/2
 end subroutine escape_and_inject
 
 
-subroutine escape_sub
+subroutine remove_particle(ip_remove)
     USE the_whole_varibles
     implicit none
-    real*8::rtp
-    !when the ion escapes and then inject a new particle
-    !replace the information of old particle (ip) with new born particle    
-    N_lost_particles=N_lost_particles+1
-    call interp_position(nrp,pdf_ne_source_r,r_particle_inj,rtp)
-    call injection_sub(rtp,x(ip,1:3),v(ip,1:3),vi_ex)
-end subroutine escape_sub
+    integer*4 :: ip_remove
 
-subroutine escape_sub2(iloss)
+    if(ip_remove<n_active)then
+        x(ip_remove,1:3)=x(n_active,1:3)
+        v(ip_remove,1:3)=v(n_active,1:3)
+        v_e(ip_remove,1:3)=v_e(n_active,1:3)
+        t_np(ip_remove)=t_np(n_active)
+        life_and_ek(ip_remove,1:2)=life_and_ek(n_active,1:2)
+        x_to_grid(ip_remove,1:2)=x_to_grid(n_active,1:2)
+        ir1_iz1_grid(ip_remove,1:2)=ir1_iz1_grid(n_active,1:2)
+    endif
+    n_active=n_active-1
+end subroutine remove_particle
+
+subroutine register_particle_loss(iloss)
     USE the_whole_varibles
     implicit none
     INTEGER*2::iloss
@@ -633,7 +712,7 @@ subroutine escape_sub2(iloss)
     
     ip_loss_for_tau_p=ip_loss_for_tau_p+1
     if(t-t1_taup>1e-6)then
-        tau_p_ave=np_max*(t-t1_taup)/(ip_loss_for_tau_p+1e-3) 
+        tau_p_ave=n_active*(t-t1_taup)/(ip_loss_for_tau_p+1e-3) 
         
         t1_taup=t
         ip_loss_for_tau_p=0
@@ -642,13 +721,67 @@ subroutine escape_sub2(iloss)
     Ek_loss_tol(iloss)=Ek_loss_tol(iloss)+mass_q_i_05*sum(v(ip,1:3)**2)
     num_loss(iloss)=num_loss(iloss)+1
     N_lost_particles=N_lost_particles+1
-    call interp_position(nrp,pdf_ne_source_r,r_particle_inj,rtp)
-    call injection_sub(rtp,x(ip,1:3),v(ip,1:3),vi_ex)
-        
-    life_and_ek(ip,1)=t    
-    life_and_ek(ip,2)=mass_q_i_05*sum(v(ip,1:3)**2)
 
-end subroutine escape_sub2
+end subroutine register_particle_loss
+
+subroutine ensure_particle_capacity(required_capacity)
+    USE the_whole_varibles
+    implicit none
+    integer*4 :: required_capacity, new_capacity
+    integer, allocatable :: np_tmp(:), ir_tmp(:,:)
+    real*8, allocatable :: x_tmp(:,:), v_tmp(:,:), v_e_tmp(:,:), t_tmp(:), xg_tmp(:,:), life_tmp(:,:)
+
+    if(required_capacity<=n_capacity)return
+
+    new_capacity=max(required_capacity,n_capacity+max(deltaN,1)*100)
+
+    allocate(np_tmp(1:new_capacity))
+    allocate(ir_tmp(1:new_capacity,1:2))
+    allocate(x_tmp(1:new_capacity,1:3))
+    allocate(v_tmp(1:new_capacity,1:3))
+    allocate(v_e_tmp(1:new_capacity,1:3))
+    allocate(t_tmp(1:new_capacity))
+    allocate(xg_tmp(1:new_capacity,1:2))
+    allocate(life_tmp(1:new_capacity,1:2))
+
+    np_tmp=0
+    ir_tmp=0
+    x_tmp=0.0d0
+    v_tmp=0.0d0
+    v_e_tmp=0.0d0
+    t_tmp=0.0d0
+    xg_tmp=0.0d0
+    life_tmp=0.0d0
+
+    np_tmp(1:n_active)=np(1:n_active)
+    ir_tmp(1:n_active,1:2)=ir1_iz1_grid(1:n_active,1:2)
+    x_tmp(1:n_active,1:3)=x(1:n_active,1:3)
+    v_tmp(1:n_active,1:3)=v(1:n_active,1:3)
+    v_e_tmp(1:n_active,1:3)=v_e(1:n_active,1:3)
+    t_tmp(1:n_active)=t_np(1:n_active)
+    xg_tmp(1:n_active,1:2)=x_to_grid(1:n_active,1:2)
+    life_tmp(1:n_active,1:2)=life_and_ek(1:n_active,1:2)
+
+    deallocate(np,ir1_iz1_grid,x,v,v_e,t_np,x_to_grid,life_and_ek)
+    allocate(np(1:new_capacity))
+    allocate(ir1_iz1_grid(1:new_capacity,1:2))
+    allocate(x(1:new_capacity,1:3))
+    allocate(v(1:new_capacity,1:3))
+    allocate(v_e(1:new_capacity,1:3))
+    allocate(t_np(1:new_capacity))
+    allocate(x_to_grid(1:new_capacity,1:2))
+    allocate(life_and_ek(1:new_capacity,1:2))
+
+    np=np_tmp
+    ir1_iz1_grid=ir_tmp
+    x=x_tmp
+    v=v_tmp
+    v_e=v_e_tmp
+    t_np=t_tmp
+    x_to_grid=xg_tmp
+    life_and_ek=life_tmp
+    n_capacity=new_capacity
+end subroutine ensure_particle_capacity
 
 subroutine find_power
     use the_whole_varibles
@@ -665,10 +798,10 @@ subroutine find_power
         Ek_loss_cumulative = Ek_loss_cumulative + sum(Ek_loss_tol(1:4))
         
         Ek_i_total = 0.0
-        do ip=1,np_max
+        do ip=1,n_active
             Ek_i_total = Ek_i_total + mass_q_i_05*sum(v(ip,1:3)**2)
         enddo
-        Ek_e_total = mass_q_e_05 * sum(v_e(1:np_max,1:3)**2)
+        Ek_e_total = mass_q_e_05 * sum(v_e(1:n_active,1:3)**2)
         Ek_total_current_joules = (Ek_i_total + Ek_e_total) * n_macro * qe_abs
 
         energy_gain_interval = (Ek_total_current_joules - Ek_total_last_joules) &

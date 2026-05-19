@@ -125,7 +125,7 @@ subroutine display_main
         
         else if (iswitch_log == 1) then
             if (.not. first_log_display) then
-                write(*,'(a)',advance='no') esc//'[5A'
+                write(*,'(a)',advance='no') esc//'[6A'
             endif
             
             write(*, "(a,'------------------------------------------------------------------------')") esc//'[2K'
@@ -137,6 +137,8 @@ subroutine display_main
                 esc//'[2K', nint(ptotal/(irf_set**2)*1e3)
             write(*, "(a,'recorded ', I0, ' of ', I0)") &
                 esc//'[2K', ifig-1,n_pic
+            write(*, "(a,'n_active = ', I0)") &
+                esc//'[2K', n_active
 
             first_log_display=.false.
             

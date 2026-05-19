@@ -38,6 +38,14 @@ subroutine initialize
         & kapDir, &
         & plasmaLoadDir, &
         & iswitch_log
+
+    namelist /injectionConfig/ &
+        & no_set, &
+        & ntar_set, &
+        & deltaNtype, &
+        & CrCzType, &
+        & Cr_guess, &
+        & Cz_guess
     
     namelist /dev/ &
         & dev_Only4CalMag

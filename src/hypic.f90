@@ -186,6 +186,22 @@ module the_whole_varibles
 
     integer*4 :: runHowManyPeriods
     integer*4 :: runRFonWhichPeriod
+
+    real*8 :: Mig
+    integer*4 :: deltaNig
+    integer*4 :: deltaN
+    integer *4 :: CrCzType
+    real*8 :: Cr_guess,Cz_guess,Cr,Cz
+    real*8 :: n0_set
+    real*8 :: ntar_set
+
+    integer*4 :: n_active
+    integer*4 :: n_capacity
+    real*8, allocatable :: x_new(:,:)
+    real*8, allocatable :: v_new(:,:)
+    real*8, allocatable :: v_e_new(:,:)
+    real*8, allocatable :: t_np_new(:)
+    real*8, allocatable :: x_to_grid_new(:,:)
     
 end module the_whole_varibles
 
@@ -246,3 +262,184 @@ Program hypic
     call display_main
     write(*,*) 'code running has finished !!! '
 End Program hypic
+
+subroutine findMig
+    use the_whole_varibles
+    implicit none
+    
+    real*8 :: l_sub, n0_sub, r2_sub, ntar_sub
+
+    Mig = 0
+    l_sub = zl
+    n0_sub = n0_set
+    r2_sub = rp * rp
+    ntar_sub = ntar_set
+    
+    Mig = 2 * pi * n0_sub * r2_sub * l_sub * Cr * Cz
+    Mig = Mig / ntar_sub
+end subroutine findMig
+
+subroutine findDeltaNig
+    use the_whole_varibles
+    implicit none
+    
+    real*8 :: DeltaNig_real
+    real*8 :: u_sub, dt_sub, l_sub, r2_sub, n0_sub
+
+    DeltaNig_real = 0.0
+
+    u_sub = vz0
+    dt_sub = dt
+    l_sub = zl
+    r2_sub = rp * rp
+    n0_sub = n0_set
+
+    DeltaNig_real = 2 * pi * n0_sub * r2_sub * Cr * u_sub * dt_sub
+    DeltaNig_real = DeltaNig_real / Mig
+
+    DeltaNig = nint(DeltaNig_real)
+end subroutine findDeltaNig
+
+subroutine findCrCz
+    use the_whole_varibles
+    implicit none
+    
+    if (CrCzType == 1) then
+        Cr = Cr_guess
+        Cz = Cz_guess
+    else
+        Cr = 0.1
+        Cz = 0.5
+    end if 
+end subroutine findCrCz
+
+subroutine findDeltaN
+    use the_whole_varibles
+    implicit none
+    
+    if (deltaNtype == 1) then
+        deltaN = deltaNig
+    else
+        ! 其他类型的deltaN计算方法可以在这里实现
+        deltaN = deltaNig
+    end if
+
+end subroutine findDeltaN
+
+subroutine touchCapacity
+    use the_whole_varibles
+    implicit none
+
+    integer*4 :: numExpand
+    real*8, allocatable :: x_tmp(:,:), v_tmp(:,:), v_e_tmp(:,:), t_np_tmp(:), x_to_grid_tmp(:,:)
+
+    numExpand = 100
+    
+    if (n_active + DeltaN > n_capacity) then
+        n_capacity = n_capacity + numExpand * DeltaN
+
+        allocate(x_tmp(n_active, 3))
+        allocate(v_tmp(n_active, 3))
+        allocate(v_e_tmp(n_active, 3))
+        allocate(t_np_tmp(n_active))
+        allocate(x_to_grid_tmp(n_active, 2))
+
+        x_tmp = x_new(1:n_active, :)
+        v_tmp = v_new(1:n_active, :)
+        v_e_tmp = v_e_new(1:n_active, :)
+        t_np_tmp = t_np_new(1:n_active)
+        x_to_grid_tmp = x_to_grid_new(1:n_active, :)
+
+        deallocate(x_new)
+        deallocate(v_new)
+        deallocate(v_e_new)
+        deallocate(t_np_new)
+        deallocate(x_to_grid_new)
+
+        allocate(x_new(n_capacity, 3))
+        allocate(v_new(n_capacity, 3))
+        allocate(v_e_new(n_capacity, 3))
+        allocate(t_np_new(n_capacity))
+        allocate(x_to_grid_new(n_capacity, 2))
+
+        x_new(1:n_active, :) = x_tmp
+        v_new(1:n_active, :) = v_tmp
+        v_e_new(1:n_active, :) = v_e_tmp
+        t_np_new(1:n_active) = t_np_tmp
+        x_to_grid_new(1:n_active, :) = x_to_grid_tmp
+    end if
+end subroutine touchCapacity
+
+subroutine escape_new
+    use the_whole_varibles
+    implicit none
+
+    real*8::zb0,rb1,zb1,zb2,rtp,ztp,v2_lim,vtp2!rb3,zb3,rb4,zb4,
+
+    call find_func_cputime_1_of_2  !-------------------1/2
+    
+    deltaN_ejected = 0
+    deltaN_lostOnWall = 0
+    deltaN_backflowed = 0
+    deltaN_lostAbnormally = 0
+    lossOnZ = 0
+
+    ip = 1
+    do while(ip <= n_active)
+        rtp=sqrt(x_new(ip,1)**2+x_new(ip,2)**2)
+        vtp2=v_new(ip,1)**2+v_new(ip,2)**2+v_new(ip,3)**2
+        ztp=x_new(ip,3)
+
+        if ( ztp<=zs )then
+            deltaN_backflowed = deltaN_backflowed + 1
+            call swap(ip)
+        elseif (  ztp>=zd )then
+            deltaN_ejected = deltaN_ejected + 1
+            call swap(ip) 
+        elseif (  rtp>=rp .and. (ztp>zs .or. ztp<zd) )then
+            deltaN_lostOnWall = deltaN_lostOnWall + 1
+            ir_tmp = ir1_iz1_grid(ip,1)
+            iz_tmp = ir1_iz1_grid(ip,2)
+            lossOnZ(iz_tmp) = lossOnZ(iz_tmp) + 1
+            call swap(ip)
+        endif
+
+        if( isnan(x(ip,1)) .or. isnan(x(ip,2)) .or. isnan(x(ip,3)) .or.  vtp2>v2_lim .or. &
+            & isnan(v(ip,1)) .or. isnan(v(ip,2)) .or. isnan(v(ip,3))  ) then
+            deltaN_lostAbnormally = deltaN_lostAbnormally + 1
+            call swap(ip)
+        endif
+
+        ip = ip + 1
+    end do
+end subroutine escape_new
+
+subroutine inject_new
+    use the_whole_varibles
+    implicit none
+
+    real*8::rtp
+
+    do ip = nactive + 1, n_active + deltaN
+        call interp_position(nrp,pdf_ne_source_r,r_particle_inj,rtp)
+        call injection_sub(rtp,x_new(ip,1:3),v_new(ip,1:3),vi_ex)
+    end do
+
+    n_active = n_active + deltaN
+
+end subroutine inject_new
+
+subroutine swap(ip)
+    use the_whole_varibles
+    implicit none
+    integer*4, intent(in) :: ip
+
+    x_new(ip, :) = x_new(n_active, :)
+    v_new(ip, :) = v_new(n_active, :)
+    v_e_new(ip, :) = v_e_new(n_active, :)
+    t_np_new(ip) = t_np_new(n_active)
+    x_to_grid_new(ip, :) = x_to_grid_new(n_active, :)
+
+    ip = ip - 1
+    n_active = n_active - 1
+end subroutine swap

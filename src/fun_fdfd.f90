@@ -266,7 +266,7 @@ subroutine find_Dielectric_tensor
                 K_ll=K_ll-ompi2/om2
 
                 K_perp=K_perp+1-ompe2/(om2-omce2);
-                K_phi=K_phi+ompe2*omce/(om*(om2-omce2))
+                K_phi=K_phi-ompe2*omce/(om*(om2-omce2))
                 K_ll=K_ll+1-ompe2/om2;
             endif
 

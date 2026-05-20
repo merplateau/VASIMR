@@ -41,7 +41,7 @@ subroutine fdfd_ini
     switch_boundary_half_variables=1 !Switch how to handle variables on half Grid in boundaries.
     !0 : by eqs(inside) or extrapolation (outside);
     !1: Interpolation/Extrapolation to find it's quantity or derivative at boundary
-    switch_r_0_boundary=1   !Switch how to handle the boundary condition of r=0. 1:old 2:new;
+    switch_r_0_boundary=2   !Switch how to handle the boundary condition of r=0. 1:old 2:new;
     switch_source_type=1 !0: z=0 Source(For Benchmark) 1:Antenna
     switch_divE=2!  0: ignore div(E) ; 1:not ignore div(E)(div(E) neq ===0); 2:ignore div(E) in Vacuum and nod ignore in Plasma Area
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!MUST NOT SET IT TO 0 (Except TESTing)

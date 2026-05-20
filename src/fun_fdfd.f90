@@ -785,7 +785,8 @@ subroutine complex_coo_pardiso_solve(A,x_plasma,B_rf)
     type(sparse_complex) :: A
     Complex*16 :: x_plasma(A.n),B_rf(A.n)
     type(sparse_complex) :: A_csr3
-    integer*4 :: pt(64),maxfct,mnum,mtype,phase,msglvl,nrhs,iparm(64),error
+    integer*8 :: pt(64)
+    integer*4 :: maxfct,mnum,mtype,phase,msglvl,nrhs,iparm(64),error
     integer*4,allocatable :: perm(:)
     allocate (A_csr3.row(1:A.n+1),A_csr3.col(1:A.nzmax),A_csr3.val(1:A.nzmax))
     allocate (perm(1:A.n))
@@ -794,7 +795,7 @@ subroutine complex_coo_pardiso_solve(A,x_plasma,B_rf)
     call coo_to_csr(A,A_csr3)
     !maxfct=1;mnum=1;mtype=13;phase=13;nrhs=1;msglvl=0
     !call pardisoinit(pt, mtype, iparm)
-    maxfct=1;mnum=1;mtype=13;phase=13;nrhs=1;iparm(:)=0;msglvl=0
+    maxfct=1;mnum=1;mtype=13;phase=13;nrhs=1;iparm(:)=0;msglvl=0;pt(:)=0
     iparm(3)=4 !OMP_NUM_THREADS
     call pardiso(pt,maxfct,mnum,mtype,phase,A_csr3.n,A_csr3.val,A_csr3.row,A_csr3.col,perm,nrhs,iparm,msglvl,B_rf,x_plasma,error)
     !call mkl_free_buffers

@@ -202,7 +202,7 @@ subroutine mcc_ie(dt_mcc_value)
 
     qa=qi;
     qb=qe_abs;
-    ma=mp;
+    ma=mi;
     mb=me;
     mu_ab=ma*mb/(ma+mb);
     sab_part=ne_mcc*ln_A/(4*pi)*dt_mcc_value*(qa*qb/(epson0*mu_ab))**2;
@@ -231,7 +231,7 @@ subroutine mcc_ei(dt_mcc_value)
     qa=qe_abs;
     qb=qi;
     ma=me;
-    mb=mp;
+    mb=mi;
     mu_ab=ma*mb/(ma+mb);
     v_ref=sqrt(qa*.5*(ti_ave+te_ave)/mu_ab)
     t_ref=tau_ei;

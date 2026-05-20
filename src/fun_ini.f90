@@ -73,6 +73,8 @@ subroutine initialize
     mi=mass_number*mp
     mass_q_i_05=0.5*mi/qi
     q_mass_i=qi/mi
+    coeff_Te_2=me/mi
+    coeff_Te_3=8/(3*sqrt(pi))*coeff_Te_2
 
     trf=1/frequency
     
@@ -288,7 +290,7 @@ subroutine rec_para
     para(21)=iswitch_RF2;para(23)=dt;para(24)=td;para(25)=trf;
     para(29)=za;para(30)=ra;
     para(31)=z_inject_cener;para(32)=vi_ex;para(33)=ve_ex;para(34)=B_resonance
-    para(35)=mp;para(36)=me;para(37)=n_macro;para(38)=power;para(39)=m_end;para(40)=rp
+    para(35)=mi;para(36)=me;para(37)=n_macro;para(38)=power;para(39)=m_end;para(40)=rp
 
 502 format(e12.4,' ')
     open (unit=75,file=trim(outputDir)//trim('1parameter.dat'),status='unknown',iostat=ierror)

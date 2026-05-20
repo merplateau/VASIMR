@@ -884,13 +884,13 @@ subroutine find_ve_vi(ve,vi)
 
     ti_tp=ek_ion_2D(ir,iz)/1.5d0 !eV
     if(ti_tp<1.)ti_tp=1.0d0
-    vti=sqrt(8.d0*qe_abs*ti_tp/(pi*mp));
+    vti=sqrt(8.d0*qe_abs*ti_tp/(pi*mi));
 
     !!Huba, NRL PLASMA FORMULARY,2002, Page 28
     !vie=4.80d-14*mass_number**(-0.5)*ti_tp**(-1.5)*ug*ni_tp;
 
     !Ma Tengcai, et,al, principle of plasma physics, 2012 revision,Page 127,eq (3.2.106)
-    vie=2.*me/mp*(te_in_FDFD(ir,iz)/ti_tp)**(1.5)*vei
+    vie=2.*me/mi*(te_in_FDFD(ir,iz)/ti_tp)**(1.5)*vei
 
     vin=nn*sig_in*vti;  !vi=500 m/s, 500K
     vi=vie+vin;
@@ -1134,7 +1134,7 @@ subroutine find_kfc(kap_ll,tpp,vl,Ak,Bk,omci,omce,ompi2,ompe2,func)
     n_l(1,2)=1.; n_l(2,2)=0.; n_l(3,2)=-1.;
 
     ! vpp(a,b)  a=1,2 for ll,perp; b=1,2 for i,e
-    vpp(1:2,1)=sqrt(2*qe_abs*tpp(1:2,1)/mp);
+    vpp(1:2,1)=sqrt(2*qe_abs*tpp(1:2,1)/mi);
     vpp(1:2,2)=sqrt(2*qe_abs*tpp(1:2,2)/me);
 
     ! zeta(a,b) a=1,2,3 for n=-1,0,1; b=1,2 for i,e
@@ -1474,12 +1474,12 @@ subroutine MHD_coeff(para_in)
 
     ti_tp=ek_ion_2D(ir,iz)/1.5 !eV
     if(ti_tp<1.)ti_tp=1.
-    vti=sqrt(8.*qe_abs*ti_tp/(pi*mp));
+    vti=sqrt(8.*qe_abs*ti_tp/(pi*mi));
     vie=4.80e-14*mass_number**(-0.5)*ti_tp**(-1.5)*ln_A0*ni_tp;
     vin=nn*sig_in*vti;
     vi=vie+vin;
-    mui=qe_abs/(mp*vi); !mui
-    di=mui*ti_tp    !Di=qe_abs*Ti/(mp*vi);
+    mui=qe_abs/(mi*vi); !mui
+    di=mui*ti_tp    !Di=qe_abs*Ti/(mi*vi);
 
     mue2=mue*mue
     coeff_1_mue2_br2=1+mue2*br00**2

@@ -51,8 +51,8 @@ module the_whole_varibles
     !ln_A0 Coulomb logarithm;
     real*8,parameter::ln_A0=15.;
     real*8,parameter::qe_4=qe_abs**4,ep_2=epson0**2
-    real*8,parameter::coeff_Te_1=(qe_abs**4*ln_A0)/(8.*sqrt(2.)*pi*ep_2*sqrt(me)), coeff_Te_2=me/mp
-    real*8,parameter::coeff_Te_3=8/(3*sqrt(pi))*coeff_Te_2, coeff_Te_4=sqrt(8.*qe_abs/(pi*me))
+    real*8,parameter::coeff_Te_1=(qe_abs**4*ln_A0)/(8.*sqrt(2.)*pi*ep_2*sqrt(me)), coeff_Te_4=sqrt(8.*qe_abs/(pi*me))
+    real*8 :: coeff_Te_2, coeff_Te_3
 
     !maxwell_FDFD
     integer*4::maxwellcount=0

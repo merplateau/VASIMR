@@ -235,7 +235,7 @@ subroutine find_Dielectric_tensor
                 K_perp=1.0d0+ompi2/(2.0d0*om)*(Ak(1,1)+Ak(3,1))&
                     &-ompe2/om2*(om-kap_ll*vl)**2/((om-kap_ll*vl)**2-omce2)
                 K_phi=ompi2/(2.0d0*om)*(Ak(1,1)-Ak(3,1))&
-                    &+ompe2*omce/om2*(om-kap_ll*vl)/((om-kap_ll*vl)**2-omce2)
+                    &-ompe2*omce/om2*(om-kap_ll*vl)/((om-kap_ll*vl)**2-omce2)
                  K_ll=1.0d0+2.0d0*ompi2/(kap_ll*2.0d0*qi*tpp(2,1)/mi)*(vl/om+Bk(1))&
                    &-ompe2/(om*(om-kap_ll*vl))
                 !K_ll=1.0d0-ompi2/(om*om)&

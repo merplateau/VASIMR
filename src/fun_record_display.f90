@@ -413,11 +413,14 @@ subroutine record_profiles
         close(25)
         
 126     format('xv_loss_',i0,'.dat')
+
+        if (recLoss == 1) then
         write (fname,126)ifig
         fullpath=trim(outputDir)//trim(fname)
         open (unit=26,file=fullpath,status='unknown',iostat=ierror)
         write (26,301)xv_loss
         close(26)
+        end if
         
         
 

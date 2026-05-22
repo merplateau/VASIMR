@@ -53,6 +53,8 @@ subroutine initialize
 
     call start_ftime
 
+    recLoss = 0
+
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=ini)
@@ -671,8 +673,10 @@ subroutine allocate_particle_arrays
     x_to_grid=0.0d0
     ir1_iz1_grid=0
     np_loss_rec = n_capacity
-    allocate(xv_loss(1:np_loss_rec,1:7))
-    xv_loss=0.
+    if (recLoss == 1) then
+        allocate(xv_loss(1:np_loss_rec,1:7))
+        xv_loss=0.
+    end if
 end subroutine allocate_particle_arrays
 
 subroutine readProfileFromFile

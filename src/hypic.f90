@@ -198,6 +198,8 @@ module the_whole_varibles
 
     integer*4 :: n_active
     integer*4 :: n_capacity
+
+    integer*4 :: recLoss
     
 end module the_whole_varibles
 

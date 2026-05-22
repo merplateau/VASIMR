@@ -704,11 +704,13 @@ subroutine register_particle_loss(iloss)
     !replace the information of old particle (ip) with new born particle  
     !Particle energy loss at the boundary is counted
     
-    ip_loss_rec=ip_loss_rec+1
-    if(ip_loss_rec>np_loss_rec)ip_loss_rec=1
-    xv_loss(ip_loss_rec,1:3)=x(ip,1:3)
-    xv_loss(ip_loss_rec,4:6)=v(ip,1:3)
-    xv_loss(ip_loss_rec,7)=iloss
+    if (recLoss == 1) then
+        ip_loss_rec=ip_loss_rec+1
+        if(ip_loss_rec>np_loss_rec)ip_loss_rec=1
+        xv_loss(ip_loss_rec,1:3)=x(ip,1:3)
+        xv_loss(ip_loss_rec,4:6)=v(ip,1:3)
+        xv_loss(ip_loss_rec,7)=iloss
+    end if
     
     ip_loss_for_tau_p=ip_loss_for_tau_p+1
     if(t-t1_taup>1e-6)then

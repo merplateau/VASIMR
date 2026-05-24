@@ -291,12 +291,9 @@ end subroutine rec_time_trajectory
 subroutine record_profiles
     USE the_whole_varibles
     implicit none
-    real*8::Es_z(1:nz) !v_abs(1:np_max),z_p(1:np_max),ion_r(1:np_max),
     real*8, allocatable, save :: density_in_z(:),ek_ave(:,:)
     integer*4, save :: trigger=0
     integer*4, save :: acc_number=0
-    character*30 fname
-    character*256 fullpath
     call find_func_cputime_1_of_2  !-------------------1/2
 
     if(.not. allocated(density_in_z))then
@@ -326,133 +323,15 @@ subroutine record_profiles
         trigger = 0
         !call escape_periodicity !energy conservation
 
-300     format(<nr>(e12.5,' '))
-! almost all (ir, iz) arries use this format
-
-301     format(<np_loss_rec>(e12.5,' '))    
-! this is used for loss recording. I find it confusing
-
         !---------------------------record the whole data at specific time---------------------------!
 
-120     format('plasma_',i0,'.dat')
-        if (rec_plasma == 1) then       
-            write (fname,120)ifig
-            fullpath=trim(outputDir)//trim(fname)
-            open (unit=20,file=fullpath,status='unknown',iostat=ierror)
-            write (20,300)real(i_plasma_region(1:nr,1:nz))
-            write (20,300)ni(1:nr,1:nz)
-            write (20,300)te_in_FDFD(1:nr,1:nz)
-            write (20,300)power_depo_rthz(1:nr,1:nz,1)+power_depo_rthz(1:nr,1:nz,2)+power_depo_rthz(1:nr,1:nz,3)
-            close (20)
-        end if
-
-121     format('rf_field_',i0,'.dat')
-        if (rec_rf_field == 1) then
-            write (fname,121)ifig
-            fullpath=trim(outputDir)//trim(fname)
-            open (unit=21,file=fullpath,status='unknown',iostat=ierror)
-            do itp=1,6
-                write (21,300)abs(Erf6(1:nr,1:nz,itp))
-            enddo
-            close (21)
-        end if
-
-
-        do iz=1,nz
-            Es_z(iz)=sum(Es_2D(:,iz,2))/nr
-        enddo
-        !call find_Ek_1D(density_in_z,ek_ave)
-
-        if(acc_number>0)then
-            ek_ave=ek_ave/(real(acc_number))
-            density_in_z=density_in_z/(real(acc_number))
-        else
-            call find_Ek_1D(density_in_z,ek_ave)
-        endif
-        trigger = 0
-
-
-322     format(<nz>(e12.5,' '))
-! Almost all (iz) arries use this format
-
-122     format('Ek_ave_z_',i0,'.dat')
-        if (rec_Ek_ave_z == 1) then
-            write (fname,122)ifig
-            fullpath=trim(outputDir)//trim(fname)
-            open (unit=22,file=fullpath,status='unknown',iostat=ierror)
-            write (22,322)z
-            write (22,322)density_in_z
-            write (22,322)ek_ave
-            write (22,322)Es_z
-            close(22)
-        end if
-
-
-323     format(<n_active>(e12.5,' '))
-! almost all (ip) arries use this format
-
-123     format('ion_rz_',i0,'.dat')
-        if (rec_ion_rz == 1) then
-            write (fname,123)ifig
-            fullpath=trim(outputDir)//trim(fname)
-            open (unit=23,file=fullpath,status='unknown',iostat=ierror)
-            write (23,323)sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2 )!ion_r(1:np_max)
-            write (23,323)x(1:n_active,3)
-            write (23,323)v(1:n_active,1)
-            write (23,323)v(1:n_active,2)
-            write (23,323)v(1:n_active,3)
-            write (23,323)t-life_and_ek(1:n_active,1)
-            write (23,323)life_and_ek(1:n_active,2)
-            close(23)
-        end if
-        
-
-124     format('density_Es_2D_',i0,'.dat')
-        if (rec_density_Es_2D == 1) then
-            write (fname,124)ifig
-            fullpath=trim(outputDir)//trim(fname)
-            open (unit=24,file=fullpath,status='unknown',iostat=ierror)
-            write (24,300)density_2D
-            write (24,300)Es_2D(:,:,1)
-            write (24,300)Es_2D(:,:,2)
-            write (24,300)Ek_ion_2D
-            write (24,300)te_2D
-            write (24,300)u_mhd(1:nr,1:nz,1)
-            write (24,300)u_mhd(1:nr,1:nz,2)
-            write (24,300)ni
-            write (24,300)te_mhd
-            write (24,300)Q_ie(1:nr,1:nz)
-            write (24,300)u_pic(1:nr,1:nz,1)
-            write (24,300)u_pic(1:nr,1:nz,2)
-            write (24,300)density_2D*n_macro*Ek_ion_2D/(1.5*1e3)*tau_E_ave !triple_product
-            close(24)
-        end if
-
-
-125     format('Erf_all_m_',i0,'.dat')
-        if (rec_Erf_all_m == 1) then
-            write (fname,125)ifig
-            fullpath=trim(outputDir)//trim(fname)
-            open (unit=25,file=fullpath,status='unknown',iostat=ierror)
-            do m=m_start,m_end
-                do itp=1,3
-                    write (25,300)real(e_output(m,1:nr,1:nz,itp))
-                    write (25,300)imag(e_output(m,1:nr,1:nz,itp))
-                enddo
-            enddo
-            close(25)
-        end if
-        
-126     format('xv_loss_',i0,'.dat')
-        if (rec_xv_loss == 1) then
-            write (fname,126)ifig
-            fullpath=trim(outputDir)//trim(fname)
-            open (unit=26,file=fullpath,status='unknown',iostat=ierror)
-            write (26,301)xv_loss
-            close(26)
-        end if
-        
-        
+        call record_profile_plasma
+        call record_profile_rf_field
+        call record_profile_Ek_ave_z(density_in_z,ek_ave,acc_number,trigger)
+        call record_profile_ion_rz
+        call record_profile_density_Es_2D
+        call record_profile_Erf_all_m
+        call record_profile_xv_loss
 
         ! call rec_para
         ! I dont think repeating rec_par makes sense
@@ -460,6 +339,180 @@ subroutine record_profiles
     endif
     call find_func_cputime_2_of_2(func_time(6))  !-----2/2
 end subroutine record_profiles
+
+subroutine record_profile_plasma
+    USE the_whole_varibles
+    implicit none
+    character*30 fname
+    character*256 fullpath
+
+300 format(<nr>(e12.5,' '))
+120 format('plasma_',i0,'.dat')
+
+    if (rec_plasma == 1) then
+        write (fname,120)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=20,file=fullpath,status='unknown',iostat=ierror)
+        write (20,300)real(i_plasma_region(1:nr,1:nz))
+        write (20,300)ni(1:nr,1:nz)
+        write (20,300)te_in_FDFD(1:nr,1:nz)
+        write (20,300)power_depo_rthz(1:nr,1:nz,1) &
+            & +power_depo_rthz(1:nr,1:nz,2)+power_depo_rthz(1:nr,1:nz,3)
+        close (20)
+    end if
+end subroutine record_profile_plasma
+
+subroutine record_profile_rf_field
+    USE the_whole_varibles
+    implicit none
+    character*30 fname
+    character*256 fullpath
+
+300 format(<nr>(e12.5,' '))
+121 format('rf_field_',i0,'.dat')
+
+    if (rec_rf_field == 1) then
+        write (fname,121)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=21,file=fullpath,status='unknown',iostat=ierror)
+        do itp=1,6
+            write (21,300)abs(Erf6(1:nr,1:nz,itp))
+        enddo
+        close (21)
+    end if
+end subroutine record_profile_rf_field
+
+subroutine record_profile_Ek_ave_z(density_in_z,ek_ave,acc_number,trigger)
+    USE the_whole_varibles
+    implicit none
+    real*8 :: density_in_z(1:nz),ek_ave(1:nz,1:3)
+    real*8 :: Es_z(1:nz)
+    integer*4 :: acc_number,trigger
+    character*30 fname
+    character*256 fullpath
+
+322 format(<nz>(e12.5,' '))
+122 format('Ek_ave_z_',i0,'.dat')
+
+    do iz=1,nz
+        Es_z(iz)=sum(Es_2D(:,iz,2))/nr
+    enddo
+    !call find_Ek_1D(density_in_z,ek_ave)
+
+    if(acc_number>0)then
+        ek_ave=ek_ave/(real(acc_number))
+        density_in_z=density_in_z/(real(acc_number))
+    else
+        call find_Ek_1D(density_in_z,ek_ave)
+    endif
+    trigger = 0
+
+    if (rec_Ek_ave_z == 1) then
+        write (fname,122)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=22,file=fullpath,status='unknown',iostat=ierror)
+        write (22,322)z
+        write (22,322)density_in_z
+        write (22,322)ek_ave
+        write (22,322)Es_z
+        close(22)
+    end if
+end subroutine record_profile_Ek_ave_z
+
+subroutine record_profile_ion_rz
+    USE the_whole_varibles
+    implicit none
+    character*30 fname
+    character*256 fullpath
+
+323 format(<n_active>(e12.5,' '))
+123 format('ion_rz_',i0,'.dat')
+
+    if (rec_ions_rz == 1) then
+        write (fname,123)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=23,file=fullpath,status='unknown',iostat=ierror)
+        write (23,323)sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2 )!ion_r(1:np_max)
+        write (23,323)x(1:n_active,3)
+        write (23,323)v(1:n_active,1)
+        write (23,323)v(1:n_active,2)
+        write (23,323)v(1:n_active,3)
+        write (23,323)t-life_and_ek(1:n_active,1)
+        write (23,323)life_and_ek(1:n_active,2)
+        close(23)
+    end if
+end subroutine record_profile_ion_rz
+
+subroutine record_profile_density_Es_2D
+    USE the_whole_varibles
+    implicit none
+    character*30 fname
+    character*256 fullpath
+
+300 format(<nr>(e12.5,' '))
+124 format('density_Es_2D_',i0,'.dat')
+
+    if (rec_density_Es_2D == 1) then
+        write (fname,124)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=24,file=fullpath,status='unknown',iostat=ierror)
+        write (24,300)density_2D
+        write (24,300)Es_2D(:,:,1)
+        write (24,300)Es_2D(:,:,2)
+        write (24,300)Ek_ion_2D
+        write (24,300)te_2D
+        write (24,300)u_mhd(1:nr,1:nz,1)
+        write (24,300)u_mhd(1:nr,1:nz,2)
+        write (24,300)ni
+        write (24,300)te_mhd
+        write (24,300)Q_ie(1:nr,1:nz)
+        write (24,300)u_pic(1:nr,1:nz,1)
+        write (24,300)u_pic(1:nr,1:nz,2)
+        write (24,300)density_2D*n_macro*Ek_ion_2D/(1.5*1e3)*tau_E_ave !triple_product
+        close(24)
+    end if
+end subroutine record_profile_density_Es_2D
+
+subroutine record_profile_Erf_all_m
+    USE the_whole_varibles
+    implicit none
+    character*30 fname
+    character*256 fullpath
+
+300 format(<nr>(e12.5,' '))
+125 format('Erf_all_m_',i0,'.dat')
+
+    if (rec_Erf_all_m == 1) then
+        write (fname,125)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=25,file=fullpath,status='unknown',iostat=ierror)
+        do m=m_start,m_end
+            do itp=1,3
+                write (25,300)real(e_output(m,1:nr,1:nz,itp))
+                write (25,300)imag(e_output(m,1:nr,1:nz,itp))
+            enddo
+        enddo
+        close(25)
+    end if
+end subroutine record_profile_Erf_all_m
+
+subroutine record_profile_xv_loss
+    USE the_whole_varibles
+    implicit none
+    character*30 fname
+    character*256 fullpath
+
+301 format(<np_loss_rec>(e12.5,' '))
+126 format('xv_loss_',i0,'.dat')
+
+    if (rec_xv_loss == 1) then
+        write (fname,126)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=26,file=fullpath,status='unknown',iostat=ierror)
+        write (26,301)xv_loss
+        close(26)
+    end if
+end subroutine record_profile_xv_loss
 
 subroutine record_dev_FDFD
     use the_whole_varibles

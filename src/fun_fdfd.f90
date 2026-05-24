@@ -102,7 +102,8 @@ subroutine dev_FDFD_post
     use the_whole_varibles
     implicit none
 
-    call record_profiles
+    call record_dev_FDFD
+    stop 'stop after dev_FDFD_post for only calculating E and dielectric tensor'
 
 end subroutine dev_FDFD_post
 

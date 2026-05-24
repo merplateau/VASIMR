@@ -513,29 +513,10 @@ subroutine record_dev_FDFD
     use the_whole_varibles
     implicit none
 
-120 format('plasma_0.dat')
-        write (fname,120)ifig
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=70,file=fullpath,status='unknown',iostat=ierror)
-
-        write (70,300)real(i_plasma_region(1:nr,1:nz))
-        write (70,300)ni(1:nr,1:nz)
-        write (70,300)power_depo_rthz(1:nr,1:nz,1)+power_depo_rthz(1:nr,1:nz,2)+power_depo_rthz(1:nr,1:nz,3)
-        close (70)
-
-125 format('Erf_all_m_0.dat')
-        write (fname,125)ifig
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=71,file=fullpath,status='unknown',iostat=ierror)
-
-        do m=m_start,m_end
-            do itp=1,3
-                write (71,300)real(e_output(m,1:nr,1:nz,itp))
-                write (71,300)imag(e_output(m,1:nr,1:nz,itp))
-            enddo
-        enddo
-        close(71)
-
+    ifig=0
+    call record_profile_plasma
+    call record_profile_Erf_all_m
+    ! stop
 end subroutine record_dev_FDFD
 
 

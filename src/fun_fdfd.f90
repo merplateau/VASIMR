@@ -61,6 +61,10 @@ subroutine maxwell_FDFD
     omc2=(om/c)**2
     iom=i*om*mu0
 
+    if (dev_Only4CalE == 1) then
+        call dev_FDFD_pre
+    end if
+
     call find_Dielectric_tensor
     call set_0
 
@@ -79,8 +83,28 @@ subroutine maxwell_FDFD
     call update_and_calculate
     maxwellcount=maxwellcount+1
 
+    if (dev_Only4CalE == 1) then
+        call dev_FDFD_post
+    end if
+
     call find_func_cputime_2_of_2(func_time(9))  !-----2/2
 end subroutine maxwell_FDFD
+
+subroutine dev_FDFD_pre
+    use the_whole_varibles
+    implicit none
+
+    
+
+end subroutine dev_FDFD_pre
+
+subroutine dev_FDFD_post
+    use the_whole_varibles
+    implicit none
+
+    call record_profiles
+
+end subroutine dev_FDFD_post
 
 subroutine do_reallocate
     use the_whole_varibles
@@ -125,8 +149,10 @@ subroutine find_Dielectric_tensor
     if (iswitch_analytic_profile == 1) then
         ni_midVal=ni ! 把真 ni 的值先存起来，解析的算完之后再赋值回去，最小改动源代码
         ni = ni_read
+    else if (iswitch_analytic == 2) then
+        ni_midVal=ni
+        call setAnalyticDensity(ni)
     end if
-
     ! change
 
     coeff_ompe2= qe_abs*qe_abs/(epson0*me)

@@ -308,37 +308,54 @@ subroutine record_profiles
         trigger=0
     endif
 
+
+    ! Periodically averaged Ek and density is important
+    ! Designed for not to be ignored
     if((mod((t+trf),(t_rec_profiles))<dt) .and. it>1 .and. trigger==0)then
         trigger = 1
         acc_number=0
         ek_ave=0.
         density_in_z=0.
     endif
+
     call find_Ek_1D_new(density_in_z,ek_ave,acc_number,trigger)
+
+
+    ! main program for profile recording
     if(mod(t,t_rec_profiles)<dt .or. it==1)then
         trigger = 0
         !call escape_periodicity !energy conservation
-300     format(<nr>(e12.5,' '))
-301     format(<np_loss_rec>(e12.5,' '))    
-        !---------------------------record the whole data at specific time---------------------------!
-        write (fname,120)ifig
-120     format('plasma_',i0,'.dat')
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=20,file=fullpath,status='unknown',iostat=ierror)
-        write (20,300)real(i_plasma_region(1:nr,1:nz))
-        write (20,300)ni(1:nr,1:nz)
-        write (20,300)te_in_FDFD(1:nr,1:nz)
-        write (20,300)power_depo_rthz(1:nr,1:nz,1)+power_depo_rthz(1:nr,1:nz,2)+power_depo_rthz(1:nr,1:nz,3)
-        close (20)
 
-        write (fname,121)ifig
+300     format(<nr>(e12.5,' '))
+! almost all (ir, iz) arries use this format
+
+301     format(<np_loss_rec>(e12.5,' '))    
+! this is used for loss recording. I find it confusing
+
+        !---------------------------record the whole data at specific time---------------------------!
+
+120     format('plasma_',i0,'.dat')
+        if (rec_plasma == 1) then       
+            write (fname,120)ifig
+            fullpath=trim(outputDir)//trim(fname)
+            open (unit=20,file=fullpath,status='unknown',iostat=ierror)
+            write (20,300)real(i_plasma_region(1:nr,1:nz))
+            write (20,300)ni(1:nr,1:nz)
+            write (20,300)te_in_FDFD(1:nr,1:nz)
+            write (20,300)power_depo_rthz(1:nr,1:nz,1)+power_depo_rthz(1:nr,1:nz,2)+power_depo_rthz(1:nr,1:nz,3)
+            close (20)
+        end if
+
 121     format('rf_field_',i0,'.dat')
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=21,file=fullpath,status='unknown',iostat=ierror)
-        do itp=1,6
-            write (21,300)abs(Erf6(1:nr,1:nz,itp))
-        enddo
-        close (21)
+        if (rec_rf_field == 1) then
+            write (fname,121)ifig
+            fullpath=trim(outputDir)//trim(fname)
+            open (unit=21,file=fullpath,status='unknown',iostat=ierror)
+            do itp=1,6
+                write (21,300)abs(Erf6(1:nr,1:nz,itp))
+            enddo
+            close (21)
+        end if
 
 
         do iz=1,nz
@@ -356,79 +373,122 @@ subroutine record_profiles
 
 
 322     format(<nz>(e12.5,' '))
+! Almost all (iz) arries use this format
+
 122     format('Ek_ave_z_',i0,'.dat')
-        write (fname,122)ifig
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=22,file=fullpath,status='unknown',iostat=ierror)
-        write (22,322)z
-        write (22,322)density_in_z
-        write (22,322)ek_ave
-        write (22,322)Es_z
-        close(22)
+        if (rec_Ek_ave_z == 1) then
+            write (fname,122)ifig
+            fullpath=trim(outputDir)//trim(fname)
+            open (unit=22,file=fullpath,status='unknown',iostat=ierror)
+            write (22,322)z
+            write (22,322)density_in_z
+            write (22,322)ek_ave
+            write (22,322)Es_z
+            close(22)
+        end if
+
+
 323     format(<n_active>(e12.5,' '))
+! almost all (ip) arries use this format
+
 123     format('ion_rz_',i0,'.dat')
-        write (fname,123)ifig
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=23,file=fullpath,status='unknown',iostat=ierror)
-        write (23,323)sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2 )!ion_r(1:np_max)
-        write (23,323)x(1:n_active,3)
-        write (23,323)v(1:n_active,1)
-        write (23,323)v(1:n_active,2)
-        write (23,323)v(1:n_active,3)
-        write (23,323)t-life_and_ek(1:n_active,1)
-        write (23,323)life_and_ek(1:n_active,2)
-        close(23)
+        if (rec_ion_rz == 1) then
+            write (fname,123)ifig
+            fullpath=trim(outputDir)//trim(fname)
+            open (unit=23,file=fullpath,status='unknown',iostat=ierror)
+            write (23,323)sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2 )!ion_r(1:np_max)
+            write (23,323)x(1:n_active,3)
+            write (23,323)v(1:n_active,1)
+            write (23,323)v(1:n_active,2)
+            write (23,323)v(1:n_active,3)
+            write (23,323)t-life_and_ek(1:n_active,1)
+            write (23,323)life_and_ek(1:n_active,2)
+            close(23)
+        end if
         
 
 124     format('density_Es_2D_',i0,'.dat')
-        write (fname,124)ifig
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=24,file=fullpath,status='unknown',iostat=ierror)
-        write (24,300)density_2D
-        write (24,300)Es_2D(:,:,1)
-        write (24,300)Es_2D(:,:,2)
-        write (24,300)Ek_ion_2D
-        write (24,300)te_2D
-        write (24,300)u_mhd(1:nr,1:nz,1)
-        write (24,300)u_mhd(1:nr,1:nz,2)
-        write (24,300)ni
-        write (24,300)te_mhd
-        write (24,300)Q_ie(1:nr,1:nz)
-        write (24,300)u_pic(1:nr,1:nz,1)
-        write (24,300)u_pic(1:nr,1:nz,2)
-        write (24,300)density_2D*n_macro*Ek_ion_2D/(1.5*1e3)*tau_E_ave !triple_product
-        close(24)
+        if (rec_density_Es_2D == 1) then
+            write (fname,124)ifig
+            fullpath=trim(outputDir)//trim(fname)
+            open (unit=24,file=fullpath,status='unknown',iostat=ierror)
+            write (24,300)density_2D
+            write (24,300)Es_2D(:,:,1)
+            write (24,300)Es_2D(:,:,2)
+            write (24,300)Ek_ion_2D
+            write (24,300)te_2D
+            write (24,300)u_mhd(1:nr,1:nz,1)
+            write (24,300)u_mhd(1:nr,1:nz,2)
+            write (24,300)ni
+            write (24,300)te_mhd
+            write (24,300)Q_ie(1:nr,1:nz)
+            write (24,300)u_pic(1:nr,1:nz,1)
+            write (24,300)u_pic(1:nr,1:nz,2)
+            write (24,300)density_2D*n_macro*Ek_ion_2D/(1.5*1e3)*tau_E_ave !triple_product
+            close(24)
+        end if
 
 
 125     format('Erf_all_m_',i0,'.dat')
-        write (fname,125)ifig
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=25,file=fullpath,status='unknown',iostat=ierror)
-        do m=m_start,m_end
-            do itp=1,3
-                write (25,300)real(e_output(m,1:nr,1:nz,itp))
-                write (25,300)imag(e_output(m,1:nr,1:nz,itp))
+        if (rec_Erf_all_m == 1) then
+            write (fname,125)ifig
+            fullpath=trim(outputDir)//trim(fname)
+            open (unit=25,file=fullpath,status='unknown',iostat=ierror)
+            do m=m_start,m_end
+                do itp=1,3
+                    write (25,300)real(e_output(m,1:nr,1:nz,itp))
+                    write (25,300)imag(e_output(m,1:nr,1:nz,itp))
+                enddo
             enddo
-        enddo
-        close(25)
+            close(25)
+        end if
         
 126     format('xv_loss_',i0,'.dat')
-
-        if (recLoss == 1) then
-        write (fname,126)ifig
-        fullpath=trim(outputDir)//trim(fname)
-        open (unit=26,file=fullpath,status='unknown',iostat=ierror)
-        write (26,301)xv_loss
-        close(26)
+        if (rec_xv_loss == 1) then
+            write (fname,126)ifig
+            fullpath=trim(outputDir)//trim(fname)
+            open (unit=26,file=fullpath,status='unknown',iostat=ierror)
+            write (26,301)xv_loss
+            close(26)
         end if
         
         
 
-        call rec_para
+        ! call rec_para
+        ! I dont think repeating rec_par makes sense
         ifig=ifig+1
     endif
     call find_func_cputime_2_of_2(func_time(6))  !-----2/2
 end subroutine record_profiles
+
+subroutine record_dev_FDFD
+    use the_whole_varibles
+    implicit none
+
+120 format('plasma_0.dat')
+        write (fname,120)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=70,file=fullpath,status='unknown',iostat=ierror)
+
+        write (70,300)real(i_plasma_region(1:nr,1:nz))
+        write (70,300)ni(1:nr,1:nz)
+        write (70,300)power_depo_rthz(1:nr,1:nz,1)+power_depo_rthz(1:nr,1:nz,2)+power_depo_rthz(1:nr,1:nz,3)
+        close (70)
+
+125 format('Erf_all_m_0.dat')
+        write (fname,125)ifig
+        fullpath=trim(outputDir)//trim(fname)
+        open (unit=71,file=fullpath,status='unknown',iostat=ierror)
+
+        do m=m_start,m_end
+            do itp=1,3
+                write (71,300)real(e_output(m,1:nr,1:nz,itp))
+                write (71,300)imag(e_output(m,1:nr,1:nz,itp))
+            enddo
+        enddo
+        close(71)
+
+end subroutine record_dev_FDFD
 
 
 subroutine find_Ek_1D(density_x,ek_x) !,x_p,v_innz,np_max,z,

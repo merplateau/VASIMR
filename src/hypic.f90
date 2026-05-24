@@ -199,7 +199,27 @@ module the_whole_varibles
     integer*4 :: n_active
     integer*4 :: n_capacity
 
-    integer*4 :: recLoss
+    integer*4 :: rec_xv_loss
+    integer*4 :: rec_plasma
+    integer*4 :: rec_rf_field
+    integer*4 :: rec_Ek_ave_z
+    integer*4 :: rec_ions_rz
+    integer*4 :: rec_density_Es_2D
+    integer*4 :: rec_Erf_all_m
+
+
+    !integer*4 :: recDensity
+    !integer*4 :: recDeposition
+    !integer*4 :: recTemperature
+    !integer*4 :: recRFfield
+    !integer*4 :: recEs
+    !integer*4 :: recParticleEBF
+    !integer*4 :: recEkDensity_PeriodAveraged
+    !integer*4 :: recIons
+    !integer*4 :: recDensityEs2D
+    !integer*4 :: recErf
+
+    integer*4 :: dev_Only4CalE
     
 end module the_whole_varibles
 

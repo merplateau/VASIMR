@@ -49,11 +49,12 @@ subroutine initialize
     
     namelist /dev/ &
         & dev_Only4CalMag
+        & dev_Only4CalE
     
 
     call start_ftime
 
-    recLoss = 0
+    call setRec
 
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
@@ -271,8 +272,8 @@ subroutine initialize
     open (unit=42,file=trim(outputDir)//trim('1time_average.dat'),status='unknown',iostat=ierror)
     open (unit=43,file=trim(outputDir)//trim('1time_trajectory.dat'),status='unknown',iostat=ierror)
 
-    if (iswitch_analytic_profile == 1) then
-        call readProfileFromFile
+    if (iswitch_analytic_profile == 1 .or. 2) then
+        call presetDensityProfile
     end if
 
     if (dev_Only4CalMag==1) then
@@ -673,16 +674,21 @@ subroutine allocate_particle_arrays
     x_to_grid=0.0d0
     ir1_iz1_grid=0
     np_loss_rec = n_capacity
-    if (recLoss == 1) then
+    if (rec_xv_loss == 1) then
         allocate(xv_loss(1:np_loss_rec,1:7))
         xv_loss=0.
     end if
 end subroutine allocate_particle_arrays
 
-subroutine readProfileFromFile
+subroutine presetDensityProfile
     use the_whole_varibles
     implicit none
     real*8:: plasma_load(1:nr,1:4*nz)
+    real*8 :: detRad, detPow
+
+    namelist /profileCOnfig/ &
+        & detRad, &
+        & detPow
 
     !load the existing plasma profile data directly.
     !plasma_6.dat is written by record_profiles:
@@ -692,16 +698,45 @@ subroutine readProfileFromFile
     !4: total power_depo_rthz
 
 202 format(<nr>(e12.5,' '))
-    open (unit=2006,file=trim(plasmaLoadDir),status='old',action='read',iostat=ierror)
-    read (2006,202)plasma_load
-    close(2006)
+    if (iswitch_analytic_profile == 1) then
+        open (unit=2006,file=trim(plasmaLoadDir),status='old',action='read',iostat=ierror)
+        read (2006,202)plasma_load
+        close(2006)
 
-    ni_read(1:nr,1:nz)=plasma_load(1:nr,nz+1:2*nz)
+        ni_read(1:nr,1:nz)=plasma_load(1:nr,nz+1:2*nz)
 
-    if(iswitch_display==1)then
-        write(*,*)'The plasma density has been loaded.'
+        if(iswitch_display==1)then
+            write(*,*)'The plasma density has been loaded.'
+        endif
+    else if (iswitch_analytic_profile == 2) then
+        open(newunit=nmlid, file=trim(nmlfile), status="old")
+        read(nmlid, nml=profileCOnfig)
+        close(nmlid)
+
+        ni_read(1:nr,1:nz)=1e7
+
+        do ir = 1, nrp
+            indVal = r(ir)/rp
+            tpr = customProfile1(indVal, detRad, detPow)
+            ni_read(ir,1:nz) = n0_set * tpr
+        enddo
+
+    end if
+end subroutine presetDensityProfile
+
+function customProfile1(indVal, detRad, detPow) result(depVal)
+    implicit none
+    real*8 :: indVal, detRad, detPow, depVal
+
+    depVal = 0.0d0
+
+    if (indVal < 0.0d0) then
+        error stop 'FATAL ERROR in customProfile1: indVal must be non-negative.'
     endif
-end subroutine readProfileFromFile
+
+    depVal = exp(-((indVal/detRad)**detPow))
+
+end function customProfile1
 
     
 subroutine readKapFromFile
@@ -734,3 +769,32 @@ subroutine mkdir_if_not_exist
         call execute_command_line(trim(cmd), exitstat=cmdstat)
     end if
 end subroutine mkdir_if_not_exist
+
+subroutine setRec
+    use the_whole_varibles
+    implicit none
+
+    namelist /recConfig/ &
+        & rec_xv_loss, &
+        & rec_plasma, &
+        & rec_rf_field, &
+        & rec_Ek_ave_z, &
+        & rec_ions_rz, &
+        & rec_density_Es_2D, &
+        & rec_Erf_all_m
+    
+    if (dev_Only4CalE == 1 .or. dev_Only4CalMag == 1) then
+        open(newunit=nmlid, file=trim(nmlfile), status="old")
+        read(nmlid, nml=recConfig)
+        close(nmlid)
+    else
+        rec_xv_loss = 0
+        rec_plasma = 1
+        rec_rf_field = 1
+        rec_Ek_ave_z = 1
+        rec_ions_rz = 1
+        rec_density_Es_2D = 1
+        rec_Erf_all_m = 1
+    end if
+
+end subroutine setRec

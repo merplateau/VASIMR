@@ -704,7 +704,7 @@ subroutine register_particle_loss(iloss)
     !replace the information of old particle (ip) with new born particle  
     !Particle energy loss at the boundary is counted
     
-    if (recLoss == 1) then
+    if (rec_xv_loss == 1) then
         ip_loss_rec=ip_loss_rec+1
         if(ip_loss_rec>np_loss_rec)ip_loss_rec=1
         xv_loss(ip_loss_rec,1:3)=x(ip,1:3)

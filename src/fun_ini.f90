@@ -236,7 +236,7 @@ subroutine initialize
         i_now=irf_set;
     endif
 
-    power_Joule=i_now**2*resistance;  ! W
+    power_Joule=0.5D0*i_now**2*resistance;  ! W  (峰值电流，时均欧姆功率带 0.5)
     nn=max_density_set*0.01;
     
     if(tau_ion_predicted>td)tau_ion_predicted=td !when tau_ion>td, use td

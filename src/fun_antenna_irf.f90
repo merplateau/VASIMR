@@ -236,7 +236,7 @@ subroutine find_irf_now
         irf2_set=0.
     endif
 
-    power_Joule=i_now**2*resistance;  ! W
+    power_Joule=0.5D0*i_now**2*resistance;  ! W  (峰值电流，时均欧姆功率带 0.5)
 end subroutine find_irf_now
 
 subroutine update_and_calculate

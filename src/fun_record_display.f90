@@ -134,7 +134,7 @@ subroutine display_main
             write(*, "(a,'(absorbed)  plasma loading = ', I0, ' mOhm')") &
                 esc//'[2K', nint(2*absorbed_power/(irf_set**2)*1e3)
             write(*, "(a,'(deposited) plasma loading = ', I0, ' mOhm')") &
-                esc//'[2K', nint(ptotal/(irf_set**2)*1e3)
+                esc//'[2K', nint(2*ptotal/(irf_set**2)*1e3)
             write(*, "(a,'recorded ', I0, ' of ', I0)") &
                 esc//'[2K', ifig-1,n_pic
             write(*, "(a,'n_active = ', I0)") &

@@ -1027,13 +1027,15 @@ subroutine ptotalsolve
     implicit none
     integer*4 :: ndirec1,ndirec2,n_boundary
     real*8 :: ave_p,ptotal_pt
+    complex*16 :: power_mode_2D(nr,nz)     ! 本 m 这一份的 2D 沉积，只用于 ptotal 积分
     n_boundary=nint(0.8*nrp)
     ave_p=0.5D0
     power_depo_2D(:,:)=0.0D0
+    power_mode_2D(:,:)=0.0D0
     do ndirec1=1,3
         do ndirec2=1,3
             power_depo_rthz(:,:,ndirec2)=power_depo_rthz(:,:,ndirec2)+ave_p*2.0D0*pi*(si(:,:,ndirec2,ndirec1)*e_int(:,:,ndirec1)*DCONJG(e_int(:,:,ndirec2)))
-            !power_depo_2D(:,:)=power_depo_2D(:,:)+ave_p*2.0D0*pi*(si(:,:,ndirec2,ndirec1)*e_int(:,:,ndirec1)*DCONJG(e_int(:,:,ndirec2)))
+            power_mode_2D(:,:)=power_mode_2D(:,:)+ave_p*2.0D0*pi*(si(:,:,ndirec2,ndirec1)*e_int(:,:,ndirec1)*DCONJG(e_int(:,:,ndirec2)))
         end do
     end do
 
@@ -1043,20 +1045,20 @@ subroutine ptotalsolve
     ptotal_pt=ptotal
     do ir=1,nrp-1
         do iz=1,nz-1
-            ptotal=ptotal+ds/4.0D0*real(power_depo_2D(ir,iz)*r(ir)+power_depo_2D(ir+1,iz)*r(ir+1)&
-                &+power_depo_2D(ir,iz+1)*r(ir)+power_depo_2D(ir+1,iz+1)*r(ir+1))
+            ptotal=ptotal+ds/4.0D0*real(power_mode_2D(ir,iz)*r(ir)+power_mode_2D(ir+1,iz)*r(ir+1)&
+                &+power_mode_2D(ir,iz+1)*r(ir)+power_mode_2D(ir+1,iz+1)*r(ir+1))
         end do
     end do
     do ir=1,n_boundary-1
         do iz=1,nz-1
-            ptotal_inside=ptotal_inside+ds/4.0D0*real(power_depo_2D(ir,iz)*r(ir)+power_depo_2D(ir+1,iz)*r(ir+1)&
-                &+power_depo_2D(ir,iz+1)*r(ir)+power_depo_2D(ir+1,iz+1)*r(ir+1))
+            ptotal_inside=ptotal_inside+ds/4.0D0*real(power_mode_2D(ir,iz)*r(ir)+power_mode_2D(ir+1,iz)*r(ir+1)&
+                &+power_mode_2D(ir,iz+1)*r(ir)+power_mode_2D(ir+1,iz+1)*r(ir+1))
         end do
     end do
     do ir=n_boundary,nrp-1
         do iz=1,nz-1
-            ptotal_boundary=ptotal_boundary+ds/4.0D0*real(power_depo_2D(ir,iz)*r(ir)+power_depo_2D(ir+1,iz)*r(ir+1)&
-                &+power_depo_2D(ir,iz+1)*r(ir)+power_depo_2D(ir+1,iz+1)*r(ir+1))
+            ptotal_boundary=ptotal_boundary+ds/4.0D0*real(power_mode_2D(ir,iz)*r(ir)+power_mode_2D(ir+1,iz)*r(ir+1)&
+                &+power_mode_2D(ir,iz+1)*r(ir)+power_mode_2D(ir+1,iz+1)*r(ir+1))
         end do
     end do
     ptotal_m(m)=ptotal-ptotal_pt

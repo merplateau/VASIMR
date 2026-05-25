@@ -644,7 +644,7 @@ subroutine set_A
                 elseif(m==-1.or.m==1)then
                     lcount=3*(nz*ir+iz-nz)-2!!!Er(1,iz)
                     if(switch_r_0_boundary==2)then
-                        if(iz==1)then
+                        if(iz==1 .or iz==nz)then
                             call set(lcount,0,1.0D0+0.0D0*i,A_helicon)!Er(1,1)
                         else
                             r(:)=r(:)+1.0D0/2.0D0 * dr

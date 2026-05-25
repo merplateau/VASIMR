@@ -22,19 +22,18 @@ subroutine background_b0
 
     namelist /magConfig1/ &
         & N_coils
-    
-    open(newunit=nmlid, file=trim(nmlfile), status="old")
-    read(nmlid, nml=magConfig1)
-    close(nmlid)
-    
-    allocate(coilLen(N_coils),coilHeight(N_coils),coilPositionLeft(N_coils),coilPositionBottom(N_coils),coilCurrent(N_coils))
-    
     namelist /magConfig2/ &
         & coilLen, &
         & coilHeight, &
         & coilPositionLeft, &
         & coilPositionBottom, &
         & coilCurrent
+
+    open(newunit=nmlid, file=trim(nmlfile), status="old")
+    read(nmlid, nml=magConfig1)
+    close(nmlid)
+
+    allocate(coilLen(N_coils),coilHeight(N_coils),coilPositionLeft(N_coils),coilPositionBottom(N_coils),coilCurrent(N_coils))
     
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=magConfig2)

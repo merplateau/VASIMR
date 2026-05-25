@@ -48,7 +48,7 @@ subroutine initialize
         & Cz_guess
     
     namelist /dev/ &
-        & dev_Only4CalMag
+        & dev_Only4CalMag, &
         & dev_Only4CalE
     
 
@@ -272,7 +272,7 @@ subroutine initialize
     open (unit=42,file=trim(outputDir)//trim('1time_average.dat'),status='unknown',iostat=ierror)
     open (unit=43,file=trim(outputDir)//trim('1time_trajectory.dat'),status='unknown',iostat=ierror)
 
-    if (iswitch_analytic_profile == 1 .or. 2) then
+    if (iswitch_analytic_profile == 1 .or. iswitch_analytic_profile == 2) then
         call presetDensityProfile
     end if
 
@@ -683,8 +683,11 @@ end subroutine allocate_particle_arrays
 subroutine presetDensityProfile
     use the_whole_varibles
     implicit none
+    integer :: nmlid
     real*8:: plasma_load(1:nr,1:4*nz)
-    real*8 :: detRad, detPow
+    real*8 :: detRad, detPow, indVal, tpr
+    real*8 customProfile1
+    external customProfile1
 
     namelist /profileCOnfig/ &
         & detRad, &
@@ -773,6 +776,7 @@ end subroutine mkdir_if_not_exist
 subroutine setRec
     use the_whole_varibles
     implicit none
+    integer :: nmlid
 
     namelist /recConfig/ &
         & rec_xv_loss, &

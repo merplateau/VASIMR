@@ -147,12 +147,9 @@ subroutine find_Dielectric_tensor
     !--------------------------coefficient--------------------------!
 
     ! change
-    if (iswitch_analytic_profile == 1) then
+    if (iswitch_analytic_profile == 1 .or. iswitch_analytic_profile == 2) then
         ni_midVal=ni ! 把真 ni 的值先存起来，解析的算完之后再赋值回去，最小改动源代码
         ni = ni_read
-    else if (iswitch_analytic == 2) then
-        ni_midVal=ni
-        call setAnalyticDensity(ni)
     end if
     ! change
 
@@ -324,7 +321,7 @@ subroutine find_Dielectric_tensor
     ep(:,:,3)=ep(:,:,7)
     ep(:,:,6)=-ep(:,:,8)
 
-    if (iswitch_analytic_profile == 1) then
+    if (iswitch_analytic_profile == 1 .or. iswitch_analytic_profile == 2) then
         ni=ni_midVal
     end if
     continue

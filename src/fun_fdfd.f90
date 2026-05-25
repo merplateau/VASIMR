@@ -8,6 +8,14 @@ subroutine fdfd_ini
         & mTruncation, &
         & iswitch_specific_mode, &
         & m_specific
+    
+    namelist /boundaryConfig/ &
+        & switch_plasma_vacuum_boundary, &
+        & switch_z_boundary, &
+        & switch_boundary_half_variables, &
+        & switch_r_0_boundary, &
+        & switch_source_type, &
+        & switch_divE
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=fdfdConfig)
@@ -29,7 +37,11 @@ subroutine fdfd_ini
         end if
     endif
 
-    switch_plasma_vacuum_boundary=43 !switch boundary of plasma-vacuum rp; 0:nothing more; 1:tangent continuous ;2:tangent continuous + Div(E)=0(vacuum);
+    open(newunit=nmlid, file=trim(nmlfile), status="old")
+    read(nmlid, nml=boundaryConfig)
+    close(nmlid)
+
+    !switch_plasma_vacuum_boundary=43 !switch boundary of plasma-vacuum rp; 0:nothing more; 1:tangent continuous ;2:tangent continuous + Div(E)=0(vacuum);
     !3 :tangent continuous + Div(E)=0 + Jpn=0
     !4 :tangent continuous + Div(E)=0 + pdv{Dn}{r}continuous
     !5 :tangent continuous + Div(E)=0 + Dn condinuous
@@ -37,13 +49,13 @@ subroutine fdfd_ini
     !8 :tangent continuous + B_th continuous
     !1X : only Ez continuous + X[don't use]
     !2X : X + Ez continuous
-    switch_z_boundary=1 ! switch boundary condition of z=0/l; 1:conductor Boundary  ;  ; 3: z=0:conductor;z=zl:absorbing(For Vacuum Benchmark)
-    switch_boundary_half_variables=1 !Switch how to handle variables on half Grid in boundaries.
+    !switch_z_boundary=1 ! switch boundary condition of z=0/l; 1:conductor Boundary  ;  ; 3: z=0:conductor;z=zl:absorbing(For Vacuum Benchmark)
+    !switch_boundary_half_variables=1 !Switch how to handle variables on half Grid in boundaries.
     !0 : by eqs(inside) or extrapolation (outside);
     !1: Interpolation/Extrapolation to find it's quantity or derivative at boundary
-    switch_r_0_boundary=2   !Switch how to handle the boundary condition of r=0. 1:old 2:new;
-    switch_source_type=1 !0: z=0 Source(For Benchmark) 1:Antenna
-    switch_divE=2!  0: ignore div(E) ; 1:not ignore div(E)(div(E) neq ===0); 2:ignore div(E) in Vacuum and nod ignore in Plasma Area
+    !switch_r_0_boundary=2   !Switch how to handle the boundary condition of r=0. 1:old 2:new;
+    !switch_source_type=1 !0: z=0 Source(For Benchmark) 1:Antenna
+    !switch_divE=2!  0: ignore div(E) ; 1:not ignore div(E)(div(E) neq ===0); 2:ignore div(E) in Vacuum and nod ignore in Plasma Area
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!MUST NOT SET IT TO 0 (Except TESTing)
 end subroutine fdfd_ini
 

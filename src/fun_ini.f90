@@ -182,7 +182,7 @@ subroutine initialize
     !z_inject_cener=-0.17; !@namelist
     !m, zc, central axial position of inject particle   
 
-    width_ne_r=0.015       !m, rw
+    width_ne_r=0.005       !m, rw
     width_ne_z=0.1         !m, zw
     width_ne_source_r=0.005
     width_ne_source_z=0.05

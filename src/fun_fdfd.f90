@@ -7,7 +7,8 @@ subroutine fdfd_ini
     namelist /fdfdConfig/ &
         & mTruncation, &
         & iswitch_specific_mode, &
-        & m_specific
+        & m_specific, &
+        & iswitch_vacum_dielectric_type
     
     namelist /boundaryConfig/ &
         & switch_plasma_vacuum_boundary, &
@@ -181,6 +182,9 @@ subroutine find_Dielectric_tensor
 
     do ir=1,nr
         do iz=1,nz
+
+            if (ir > nrp .and. iswitch_vacum_dielectric_type == 1) cycle
+
             call find_ve_vi(ve,vi)
             
             if (iswitch_dielectric==3 .or. iswitch_dielectric==4) then
@@ -322,6 +326,8 @@ subroutine find_Dielectric_tensor
 
 
     si(nrp,:,1,:)=0.0D0*i
+
+    if (iswitch_vacum_dielectric_type == 1) si(nrp+1:np,:,:,:)=0.0D0*i
 
     ep(:,:,1)=1.0D0+i/(epson0*om)*si(:,:,1,1)
     ep(:,:,5)=1.0D0+i/(epson0*om)*si(:,:,2,2)

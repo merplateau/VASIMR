@@ -220,6 +220,8 @@ module the_whole_varibles
     !integer*4 :: recErf
 
     integer*4 :: dev_Only4CalE
+
+    integer*4 :: iswitch_vacum_dielectric_type
     
 end module the_whole_varibles
 

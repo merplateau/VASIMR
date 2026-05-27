@@ -327,7 +327,7 @@ subroutine find_Dielectric_tensor
 
     si(nrp,:,1,:)=0.0D0*i
 
-    if (iswitch_vacum_dielectric_type == 1) si(nrp+1,np,:,:,:)=0.0D0*i
+    if (iswitch_vacum_dielectric_type == 1) si(nrp+1:nr,:,:,:)=0.0D0*i
 
     ep(:,:,1)=1.0D0+i/(epson0*om)*si(:,:,1,1)
     ep(:,:,5)=1.0D0+i/(epson0*om)*si(:,:,2,2)

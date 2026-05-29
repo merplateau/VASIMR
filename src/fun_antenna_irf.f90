@@ -147,7 +147,7 @@ subroutine antenna
             if(iswitch_antenna_type==1)then
                 do ir=nra,nra1
                     do iz=nz1,nz2
-                        c2=j_helical_nor/elz*(1-exp(-imp))*exp(-imp*(z(iz)-z1)/la)*( exp(-c1)-exp(c1)  )/(2*imp)
+                        c2=j_helical_nor*(1-exp(-imp))*exp(-imp*(z(iz)-z1)/la)*( exp(-c1)-exp(c1)  )/(2*imp)
                         ja_m_nor(ir,iz,2)=elth*c2
                         ja_m_nor(ir,iz,3)=elz*c2
                     enddo
@@ -157,7 +157,7 @@ subroutine antenna
             elseif(iswitch_antenna_type==-1)then
                 do ir=nra,nra1
                     do iz=nz1,nz2
-                        c2=j_helical_nor/elz*(1-exp(-imp))*exp(imp*(z(iz)-z1)/la)*( exp(-c1)-exp(c1)  )/(2*imp)
+                        c2=j_helical_nor*(1-exp(-imp))*exp(imp*(z(iz)-z1)/la)*( exp(-c1)-exp(c1)  )/(2*imp)
                         ja_m_nor(ir,iz,2)=-elth*c2
                         ja_m_nor(ir,iz,3)=elz*c2
                     enddo

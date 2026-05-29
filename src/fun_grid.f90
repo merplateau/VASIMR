@@ -9,14 +9,18 @@ subroutine grid_ini
     namelist /gridConfig/ &
         & r_var_1, &
         & r_met_1, &
-        & z_vac_1
+        & z_vac_1, &
+        & nr,      &
+        & nz
+
+    ! default value, can be changed by namelist 
+    nr=101
+    nz=301 
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=gridConfig)
     close(nmlid)    
 
-    nr=101
-    nz=301
 
     !Device configuration
     !in meter

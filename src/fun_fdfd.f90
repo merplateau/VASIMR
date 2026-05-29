@@ -183,7 +183,13 @@ subroutine find_Dielectric_tensor
     do ir=1,nr
         do iz=1,nz
 
-            if (ir > nrp .and. iswitch_vacum_dielectric_type == 1) cycle
+            if (ir > nrp) then
+                if (iswitch_vacum_dielectric_type == 1 .or. iswitch_vacum_dielectric_type == 11) cycle
+            else
+                if (iswitch_vacum_dielectric_type == 11) cycle
+            end if
+
+                
 
             call find_ve_vi(ve,vi)
             
@@ -328,6 +334,7 @@ subroutine find_Dielectric_tensor
     si(nrp,:,1,:)=0.0D0*i
 
     if (iswitch_vacum_dielectric_type == 1) si(nrp+1:nr,:,:,:)=0.0D0*i
+    if (iswitch_vacum_dielectric_type == 11) si(:,:,:,:)=0.0D0*i
 
     ep(:,:,1)=1.0D0+i/(epson0*om)*si(:,:,1,1)
     ep(:,:,5)=1.0D0+i/(epson0*om)*si(:,:,2,2)

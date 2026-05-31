@@ -279,7 +279,8 @@ subroutine initialize
     if (dev_Only4CalMag==1) then
         stop 'Only for calculating magnetic field, stop after background_b0'
     end if
-    call readKapFromFile
+    
+    if ((iswitch_dielectric == 3 .or. iswitch_dielectric == 4) .and. k_closure_type == 2) call readKapFromFile
 end subroutine initialize
 
 subroutine rec_para

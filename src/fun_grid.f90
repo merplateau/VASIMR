@@ -235,5 +235,7 @@ subroutine grid_ini
     ni_read=0.0D0
     ! change
 
-    allocate (vdepo(1:nr,1:nz,1:7))
+    allocate (nu_depo(1:nr,1:nz,1:7), n_depo(1:nr,1:nz))
+    nu_depo=0.0d0
+    n_depo=0.0d0
 end subroutine grid_ini

@@ -224,6 +224,7 @@ module the_whole_varibles
     integer*4 :: iswitch_vacum_dielectric_type
     
     real*8,allocatable :: nu_depo(:,:,:), n_depo(:,:)
+    integer*4 :: velocity_trigger=0, velocity_acc_number=0, velocity_ready=0
 end module the_whole_varibles
 
 Program hypic
@@ -254,12 +255,14 @@ Program hypic
         it=it+1; t=t+dt
 
         if(mod(t,dt_run_fdfd)<dt  .and. t>t_power_on .and. t<t_power_end )then
+            call prepareVelocityForFDFD
             call set_ne_Te
             call maxwell_FDFD
             if(iswitch_RF2==1 )call maxwell_FDFD
         endif
 
         call escape_and_inject
+        call accumulateVelocityBeforeFDFD
         call mover
         if(iswitch_mcc/=0)call mcc_main
 

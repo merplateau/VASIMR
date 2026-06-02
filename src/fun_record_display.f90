@@ -149,6 +149,31 @@ subroutine display_main
 end subroutine display_main
 
 
+subroutine record_loading_history(event_type)
+    USE the_whole_varibles
+    implicit none
+    integer*4 :: event_type
+    integer*4 :: ip_rec
+    real*8 :: absorbed_loading, deposited_loading
+    real*8 :: Ek_i_total, Ek_e_total
+
+    if(iswitch_log/=1)return
+
+    Ek_i_total=0.0d0
+    do ip_rec=1,n_active
+        Ek_i_total=Ek_i_total+mass_q_i_05*sum(v(ip_rec,1:3)**2)
+    enddo
+    Ek_e_total=mass_q_e_05*sum(v_e(1:n_active,1:3)**2)
+    Ek_total_current_joules=(Ek_i_total+Ek_e_total)*n_macro*qe_abs
+
+    absorbed_loading=2.0d0*absorbed_power/(irf_set**2)*1.0d3
+    deposited_loading=2.0d0*ptotal/(irf_set**2)*1.0d3
+
+300 format(i4,1x,e14.7,1x,i12,3(1x,e14.7))
+    write(44,300)event_type,t,it,absorbed_loading,deposited_loading,Ek_total_current_joules
+end subroutine record_loading_history
+
+
 
 subroutine rec_time_ave
     USE the_whole_varibles

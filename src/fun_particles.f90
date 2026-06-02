@@ -788,7 +788,7 @@ end subroutine ensure_particle_capacity
 subroutine find_power
     use the_whole_varibles
     implicit none
-    real*8 :: Ek_i_total, Ek_e_total, Ek_total_current_joules
+    real*8 :: Ek_i_total, Ek_e_total
     real*8 :: Ek_loss_interval_joules, energy_gain_interval
 
     if(mod(t,10.*trf)<dt)then
@@ -821,6 +821,7 @@ subroutine find_power
         Ek_loss_tol=0.
         
         call find_irf_now
+        call record_loading_history(1)
     endif
 end subroutine find_power
 

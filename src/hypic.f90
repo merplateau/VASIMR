@@ -112,14 +112,14 @@ module the_whole_varibles
     real*8,allocatable :: xv_loss(:,:)
     real*8:: t1_taup=0.
     real*8, allocatable :: life_and_ek(:,:)
-    real*8 :: Ek_total_last_joules
+    real*8 :: Ek_total_last_joules=0.0d0, Ek_total_current_joules=0.0d0
 
     !particles
     integer*4,parameter:: iseed=1234567,nrec_t=42,nrec_p=20,te_update_interval=1000
     integer,parameter::nz_length=120
     integer,allocatable :: ir1_iz1_grid(:,:)
     integer*4::ifig=0
-    integer*4::num_inject,it,ip,np_e,N_lost_particles
+    integer*4::num_inject,it=0,ip,np_e,N_lost_particles
     real*8:: vtp(1:3),dseed=123457.D0, s_drz
     real*8:: coeff1,t_cyclotron,vi_ex,ve_ex,dt_trf,n_macro
 
@@ -153,7 +153,7 @@ module the_whole_varibles
     Real*8:: s_tab(1:22),a_tab(1:22)
     Real*8:: ln_A=10.9,dt_mcc(1:4),time_to_run_mcc(1:4)=0.,dt_over_dt_mcc(1:4)=1e-2,ne_mcc,mu_ab,sab_part
     Real*8:: density_ave,te_ave,ti_ave,Ek_i_ave,Ek_e_ave,tau_ii,tau_ie,tau_ee,tau_ei
-    Real*8:: Ek_i_ave_ini,Ek_e_ave_ini,absorbed_power,Ek_total_initial_joules,Ek_loss_cumulative
+    Real*8:: Ek_i_ave_ini,Ek_e_ave_ini,absorbed_power=0.0d0,Ek_total_initial_joules=0.0d0,Ek_loss_cumulative=0.0d0
 
     ! change
     integer*4 :: iswitch_analytic_profile
@@ -284,6 +284,7 @@ Program hypic
 
     close(42)
     close(43)
+    if(iswitch_log==1)close(44)
     call display_main
     write(*,*) 'code running has finished !!! '
 End Program hypic

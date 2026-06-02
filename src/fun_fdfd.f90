@@ -95,6 +95,7 @@ subroutine maxwell_FDFD
     !call find_irf_now
     call update_and_calculate
     maxwellcount=maxwellcount+1
+    call record_loading_history(2)
 
     if (dev_Only4CalE == 1) then
         call dev_FDFD_post

@@ -277,6 +277,9 @@ subroutine initialize
     call rec_para
     open (unit=42,file=trim(outputDir)//trim('1time_average.dat'),status='unknown',iostat=ierror)
     open (unit=43,file=trim(outputDir)//trim('1time_trajectory.dat'),status='unknown',iostat=ierror)
+    if(iswitch_log==1)then
+        open (unit=44,file=trim(outputDir)//trim('1loading_history.dat'),status='unknown',iostat=ierror)
+    endif
 
     if (iswitch_analytic_profile == 1 .or. iswitch_analytic_profile == 2) then
         call presetDensityProfile
@@ -599,6 +602,7 @@ subroutine power_ini
 
     Ek_total_initial_joules = (Ek_i_initial + Ek_e_initial) * n_macro * qe_abs
     Ek_total_last_joules = Ek_total_initial_joules
+    Ek_total_current_joules = Ek_total_initial_joules
     
     Ek_loss_cumulative = 0.0
     absorbed_power = 0.0

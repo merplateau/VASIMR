@@ -214,8 +214,14 @@ subroutine find_Dielectric_tensor
             !-------------start kinetics Kpp---------------!
 
             !vl = 5e4 ! m/s !test
-            vl = vl_in_FDFD
-            if(velocity_ready==1 .and. n_depo(ir,iz)>1.0d-10) vl = nu_depo(ir,iz,6)
+            vl = 0.0d0
+            if (iswitch_dielectric==3 .or. iswitch_dielectric==4) then
+                if(iswitch_v_closure_type==1)then
+                    vl = vl_in_FDFD
+                elseif(iswitch_v_closure_type==2)then
+                    if(velocity_ready==1 .and. n_depo(ir,iz)>=1.0d-10) vl = nu_depo(ir,iz,6)
+                endif
+            endif
 
             ti_perp = Ek_ion_2D_r(ir,iz)/1.5;
             ti_ll = (Ek_ion_2D(ir,iz)-Ek_ion_2D_r(ir,iz))/1.5

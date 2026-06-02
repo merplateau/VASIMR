@@ -926,6 +926,9 @@ subroutine accumulateVelocityBeforeFDFD
     USE the_whole_varibles
     implicit none
 
+    if(iswitch_dielectric/=3 .and. iswitch_dielectric/=4)return
+    if(iswitch_v_closure_type/=2)return
+
     if((mod((t+trf),dt_run_fdfd)<dt) .and. t>t_power_on .and. t<t_power_end .and. velocity_trigger==0)then
         velocity_trigger=1
         velocity_acc_number=0
@@ -943,6 +946,9 @@ subroutine prepareVelocityForFDFD
     implicit none
 
     velocity_ready=0
+    if(iswitch_dielectric/=3 .and. iswitch_dielectric/=4)return
+    if(iswitch_v_closure_type/=2)return
+
     if(velocity_trigger==1 .and. velocity_acc_number>0)then
         nu_depo=nu_depo/real(velocity_acc_number)
         n_depo=n_depo/real(velocity_acc_number)

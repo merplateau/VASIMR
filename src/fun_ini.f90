@@ -14,6 +14,7 @@ subroutine initialize
         & runRFonWhichPeriod, &
         & np_max, &
         & iswitch_dielectric, &
+        & iswitch_v_closure_type, &
         & iswitch_analytic_temperature, &
         & k_closure_type, &
         & k_constant, &
@@ -56,6 +57,8 @@ subroutine initialize
 
     call setRec
 
+    ! default value, can be changed by namelist
+    iswitch_v_closure_type=1
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=ini)
@@ -111,6 +114,9 @@ subroutine initialize
     !                    3: 热等离子体，离子动力学 + 电子冷响应
     !                    4: 热等离子体，离子和电子都采用动力学响应
     !iswitch_dielectric=3 !@namelist
+    !iswitch_v_closure_type= 0: no drift, vl=0
+    !                        1: uniform preset drift, vl=vl_in_FDFD
+    !                        2: period-averaged PIC statistic, vl=nu_depo(:,:,6)
 
     use_file_defined_density=0 !0-Gaussian profile; 1- read from file
 

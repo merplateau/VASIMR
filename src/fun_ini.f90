@@ -605,6 +605,7 @@ subroutine power_ini
     Ek_total_current_joules = Ek_total_initial_joules
     
     Ek_loss_cumulative = 0.0
+    Ek_inject_tol = 0.0d0
     absorbed_power = 0.0
 end subroutine power_ini
 

@@ -218,6 +218,7 @@ subroutine injection_inlet_sub(ip_set)
     t_np(ip_set)=t
     life_and_ek(ip_set,1)=t
     life_and_ek(ip_set,2)=mass_q_i_05*sum(v(ip_set,1:3)**2)
+    Ek_inject_tol=Ek_inject_tol+life_and_ek(ip_set,2)
 end subroutine injection_inlet_sub
 
 subroutine mover
@@ -789,10 +790,11 @@ subroutine find_power
     use the_whole_varibles
     implicit none
     real*8 :: Ek_i_total, Ek_e_total
-    real*8 :: Ek_loss_interval_joules, energy_gain_interval
+    real*8 :: Ek_loss_interval_joules, Ek_inject_interval_joules, energy_gain_interval
 
     if(mod(t,10.*trf)<dt)then
         Ek_loss_interval_joules = sum(Ek_loss_tol(1:4)) * n_macro * qe_abs
+        Ek_inject_interval_joules = Ek_inject_tol * n_macro * qe_abs
 
         power_loss_ave(1:4)=n_macro*qe_abs*Ek_loss_tol(1:4)/(10.*trf)
         Ek_loss_ave(1:4)=Ek_loss_tol(1:4)/num_loss(1:4)
@@ -807,7 +809,7 @@ subroutine find_power
         Ek_total_current_joules = (Ek_i_total + Ek_e_total) * n_macro * qe_abs
 
         energy_gain_interval = (Ek_total_current_joules - Ek_total_last_joules) &
-                             + Ek_loss_interval_joules
+                             + Ek_loss_interval_joules - Ek_inject_interval_joules
         
         if (10.*trf > 1.0e-12) then
             absorbed_power = energy_gain_interval / (10.*trf)
@@ -819,6 +821,7 @@ subroutine find_power
 
         num_loss=1e-2
         Ek_loss_tol=0.
+        Ek_inject_tol=0.0d0
         
         call find_irf_now
         call record_loading_history(1)

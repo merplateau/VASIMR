@@ -137,6 +137,7 @@ module the_whole_varibles
 
     real*8:: rec_t(nrec_t)=0.,rec_p(nrec_p)=0.,vz0,state_power_on_off=0.
     real*8:: Ek_loss_ave(1:4)=0,power_loss_ave(1:4)=0,Ek_loss_tol(1:4)=0.,num_loss(1:4)=1e-2
+    real*8 :: Ek_inject_tol=0.0d0
     real*8, allocatable :: pdf_ne_r(:),pdf_ne_source_r(:),pdf_ne_z(:),pdf_ne_source_z(:),r_particle_inj(:)
     Real*8:: t_rec_evolution,t_rec_trajectory,rz_ant_region(1:4),t_rec_profiles
     real*8, allocatable :: density_2D(:,:),Es_2D(:,:,:),Ek_ion_2D(:,:),Ek_ion_2D_r(:,:)

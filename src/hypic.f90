@@ -158,7 +158,7 @@ module the_whole_varibles
 
     ! change
     integer*4 :: iswitch_analytic_profile
-    integer*4 :: iswitch_analytic_temperature
+    integer*4 :: iswitch_T_closure_type
     real*8, allocatable :: ni_midVal(:,:)
     real*8, allocatable :: ni_read(:,:)
     real*8, allocatable :: kap_ll_read_raw(:,:)
@@ -167,6 +167,7 @@ module the_whole_varibles
     real*8 :: tipp_uni
     real*8 :: tell_uni
     real*8 :: t2pp_uni
+    real*8 :: TminLim
     ! change
 
     character(len=256) :: nmlfile
@@ -225,8 +226,8 @@ module the_whole_varibles
 
     integer*4 :: iswitch_vacum_dielectric_type
     
-    real*8,allocatable :: nu_depo(:,:,:), n_depo(:,:)
-    integer*4 :: velocity_trigger=0, velocity_acc_number=0, velocity_ready=0
+    real*8,allocatable :: nu_depo(:,:,:), u2_depo(:,:,:), t_depo(:,:,:), n_depo(:,:)
+    integer*4 :: statistic_trigger=0, statistic_acc_number=0, statistic_ready=0
 end module the_whole_varibles
 
 Program hypic
@@ -257,14 +258,14 @@ Program hypic
         it=it+1; t=t+dt
 
         if(mod(t,dt_run_fdfd)<dt  .and. t>t_power_on .and. t<t_power_end )then
-            call prepareVelocityForFDFD
+            call prepareStatisticForFDFD
             call set_ne_Te
             call maxwell_FDFD
             if(iswitch_RF2==1 )call maxwell_FDFD
         endif
 
         call escape_and_inject
-        call accumulateVelocityBeforeFDFD
+        call accumulateStatisticBeforeFDFD
         call mover
         if(iswitch_mcc/=0)call mcc_main
 

@@ -15,13 +15,14 @@ subroutine initialize
         & np_max, &
         & iswitch_dielectric, &
         & iswitch_v_closure_type, &
-        & iswitch_analytic_temperature, &
+        & iswitch_T_closure_type, &
         & k_closure_type, &
         & k_constant, &
         & till_uni, &
         & tipp_uni, &
         & tell_uni, &
         & t2pp_uni, &
+        & TminLim, &
         & iswitch_analytic_profile, &
         & iswitch_mcc, &
         & iswitch_antenna_type, &
@@ -59,6 +60,8 @@ subroutine initialize
 
     ! default value, can be changed by namelist
     iswitch_v_closure_type=1
+    iswitch_T_closure_type=0
+    TminLim=3.0d0
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=ini)
@@ -85,7 +88,7 @@ subroutine initialize
     trf=1/frequency
     
     !iswitch_dielectric=3 !@namelist
-    !iswitch_analytic_temperature = 1 !@namelist
+    !iswitch_T_closure_type = 1 !@namelist
     !k_closure_type=2 !@namelist
     !k_closure_type =1: 每一点用 find_kfc 闭合 k_parallel
     !               =0: 每一点用常数 k_constant 闭合 k_parallel
@@ -117,6 +120,9 @@ subroutine initialize
     !iswitch_v_closure_type= 0: no drift, vl=0
     !                        1: uniform preset drift, vl=vl_in_FDFD
     !                        2: period-averaged PIC statistic, vl=nu_depo(:,:,6)
+    !iswitch_T_closure_type= 0: original temperature closure
+    !                        1: uniform preset temperature
+    !                        2: period-averaged PIC ion temperature statistic
 
     use_file_defined_density=0 !0-Gaussian profile; 1- read from file
 

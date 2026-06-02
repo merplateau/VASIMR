@@ -220,7 +220,7 @@ subroutine find_Dielectric_tensor
                 if(iswitch_v_closure_type==1)then
                     vl = vl_in_FDFD
                 elseif(iswitch_v_closure_type==2)then
-                    if(velocity_ready==1 .and. n_depo(ir,iz)>=1.0d-10) vl = nu_depo(ir,iz,6)
+                    if(statistic_ready==1 .and. n_depo(ir,iz)>=1.0d-10) vl = nu_depo(ir,iz,6)
                 endif
             endif
 
@@ -238,9 +238,16 @@ subroutine find_Dielectric_tensor
             tpp(1,1) = ti_ll; tpp(2,1) = ti_perp
             tpp(1,2) = te_ll; tpp(2,2) = te_perp
 
-            if (iswitch_analytic_temperature == 1) then
+            if (iswitch_T_closure_type == 1) then
                 tpp(1,1) = till_uni; tpp(2,1) = tipp_uni
                 tpp(1,2) = tell_uni; tpp(2,2) = t2pp_uni
+            elseif (iswitch_T_closure_type == 2) then
+                tpp(1,1) = TminLim
+                tpp(2,1) = TminLim
+                if (statistic_ready==1 .and. n_depo(ir,iz)>=1.0d-10) then
+                    if (t_depo(ir,iz,1)>=TminLim) tpp(1,1) = t_depo(ir,iz,1)
+                    if (t_depo(ir,iz,2)>=TminLim) tpp(2,1) = t_depo(ir,iz,2)
+                endif
             end if
 
             if (iswitch_dielectric==3 .or. iswitch_dielectric==4) then

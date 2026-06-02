@@ -926,45 +926,58 @@ end subroutine find_power
 !end subroutine interp_0d
 
 
-subroutine accumulateVelocityBeforeFDFD
+subroutine accumulateStatisticBeforeFDFD
     USE the_whole_varibles
     implicit none
 
     if(iswitch_dielectric/=3 .and. iswitch_dielectric/=4)return
-    if(iswitch_v_closure_type/=2)return
+    if(iswitch_v_closure_type/=2 .and. iswitch_T_closure_type/=2)return
 
-    if((mod((t+trf),dt_run_fdfd)<dt) .and. t>t_power_on .and. t<t_power_end .and. velocity_trigger==0)then
-        velocity_trigger=1
-        velocity_acc_number=0
-        velocity_ready=0
+    if((mod((t+trf),dt_run_fdfd)<dt) .and. t>t_power_on .and. t<t_power_end .and. statistic_trigger==0)then
+        statistic_trigger=1
+        statistic_acc_number=0
+        statistic_ready=0
         nu_depo=0.0d0
+        u2_depo=0.0d0
+        t_depo=0.0d0
         n_depo=0.0d0
     endif
 
-    call findVelocity
-end subroutine accumulateVelocityBeforeFDFD
+    call findStatistic
+end subroutine accumulateStatisticBeforeFDFD
 
 
-subroutine prepareVelocityForFDFD
+subroutine prepareStatisticForFDFD
     USE the_whole_varibles
     implicit none
 
-    velocity_ready=0
+    statistic_ready=0
     if(iswitch_dielectric/=3 .and. iswitch_dielectric/=4)return
-    if(iswitch_v_closure_type/=2)return
+    if(iswitch_v_closure_type/=2 .and. iswitch_T_closure_type/=2)return
 
-    if(velocity_trigger==1 .and. velocity_acc_number>0)then
-        nu_depo=nu_depo/real(velocity_acc_number)
-        n_depo=n_depo/real(velocity_acc_number)
-        velocity_ready=1
+    if(statistic_trigger==1 .and. statistic_acc_number>0)then
+        nu_depo=nu_depo/real(statistic_acc_number)
+        u2_depo=u2_depo/real(statistic_acc_number)
+        n_depo=n_depo/real(statistic_acc_number)
+        call calculateTemperatureStatistic
+        statistic_ready=1
     endif
 
-    velocity_trigger=0
-    velocity_acc_number=0
-end subroutine prepareVelocityForFDFD
+    statistic_trigger=0
+    statistic_acc_number=0
+end subroutine prepareStatisticForFDFD
 
 
-subroutine findVelocity
+subroutine calculateTemperatureStatistic
+    USE the_whole_varibles
+    implicit none
+
+    t_depo(:,:,1)=2.0d0*mass_q_i_05*max(u2_depo(:,:,1)-nu_depo(:,:,6)**2,0.0d0)
+    t_depo(:,:,2)=mass_q_i_05*max(u2_depo(:,:,2)-nu_depo(:,:,5)**2-nu_depo(:,:,7)**2,0.0d0)
+end subroutine calculateTemperatureStatistic
+
+
+subroutine findStatistic
     USE the_whole_varibles
     implicit none
     
@@ -976,6 +989,7 @@ subroutine findVelocity
     !vmag    (vl, vpr, vth)
     !uip     (vx, vy, vz, vr, vth, vl, vpr)
     real*8 :: uip(7)
+    real*8 :: u2ip(2)
 
     real*8 :: s1,s2,s3,s4,vtp2
     integer*4 :: ir2,ir1,iz2,iz1
@@ -986,18 +1000,19 @@ subroutine findVelocity
     integer*4 :: n_sm
     integer*4 :: i_comp
     logical :: valid_particle
-    real*8, allocatable, save :: nu_now(:,:,:), n_now(:,:)
+    real*8, allocatable, save :: nu_now(:,:,:), u2_now(:,:,:), n_now(:,:)
 
-    if(velocity_trigger/=1)return
+    if(statistic_trigger/=1)return
 
     if(.not. allocated(nu_now))then
-        allocate(nu_now(1:nr,1:nz,1:7), n_now(1:nr,1:nz))
+        allocate(nu_now(1:nr,1:nz,1:7), u2_now(1:nr,1:nz,1:2), n_now(1:nr,1:nz))
     endif
 
     call find_x_to_grid
-    velocity_acc_number=velocity_acc_number+1
+    statistic_acc_number=statistic_acc_number+1
 
     nu_now=0.0d0
+    u2_now=0.0d0
     n_now=0.0d0
     do ip = 1, n_active
         call calcRaw
@@ -1007,6 +1022,7 @@ subroutine findVelocity
     call smooStatistic
 
     nu_depo=nu_depo+nu_now
+    u2_depo=u2_depo+u2_now
     n_depo=n_depo+n_now
 
 contains
@@ -1050,6 +1066,7 @@ contains
         vpr=vr*magdir(3)-vz*magdir(1)
         
         uip = (/vx, vy, vz, vr, vth, vl, vpr/)
+        u2ip = (/vl**2, vpr**2+vth**2/)
     end subroutine calcRaw
 
     subroutine depoStatistic
@@ -1057,6 +1074,11 @@ contains
         nu_now(ir2,iz2,:)=nu_now(ir2,iz2,:)+s1*uip(:)
         nu_now(ir2,iz1,:)=nu_now(ir2,iz1,:)+s2*uip(:)
         nu_now(ir1,iz2,:)=nu_now(ir1,iz2,:)+s4*uip(:)
+
+        u2_now(ir1,iz1,:)=u2_now(ir1,iz1,:)+s3*u2ip(:)
+        u2_now(ir2,iz2,:)=u2_now(ir2,iz2,:)+s1*u2ip(:)
+        u2_now(ir2,iz1,:)=u2_now(ir2,iz1,:)+s2*u2ip(:)
+        u2_now(ir1,iz2,:)=u2_now(ir1,iz2,:)+s4*u2ip(:)
 
         n_now(ir1,iz1)=n_now(ir1,iz1)+s3
         n_now(ir2,iz2)=n_now(ir2,iz2)+s1
@@ -1067,6 +1089,9 @@ contains
     subroutine restStatistic
         do i_comp=1,7
             nu_now(:,:,i_comp)=nu_now(:,:,i_comp)/max(n_now,1.0d-20)
+        enddo
+        do i_comp=1,2
+            u2_now(:,:,i_comp)=u2_now(:,:,i_comp)/max(n_now,1.0d-20)
         enddo
     end subroutine restStatistic
 
@@ -1083,6 +1108,8 @@ contains
             call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_now(ir1:ir2,iz1:iz2,5)) ! vth
             call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_now(ir1:ir2,iz1:iz2,6)) ! vl
             call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_now(ir1:ir2,iz1:iz2,7)) ! vpr
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,u2_now(ir1:ir2,iz1:iz2,1)) ! vl^2
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,u2_now(ir1:ir2,iz1:iz2,2)) ! vpr^2+vth^2
         enddo
     end subroutine smooStatistic
-end subroutine findVelocity
+end subroutine findStatistic

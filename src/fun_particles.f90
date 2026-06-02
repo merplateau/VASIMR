@@ -920,3 +920,112 @@ end subroutine find_power
     !data_aft=s2*data_bef(ix_bef1)+s1*data_bef(ix_bef2);
     !continue
 !end subroutine interp_0d
+
+
+subroutine findVelocity
+    USE the_whole_varibles
+    implicit none
+    
+    real*8 :: rtp, sinth, costh
+    real*8 :: xx, yy, zz
+    real*8 :: vx, vy, vz, vr, vth, vl, vpr
+    !vcar    (vx, vy,  vz )
+    !vcyl    (vr, vth, vz )
+    !vmag    (vl, vpr, vth)
+    !uip     (vx, vy, vz, vr, vth, vl, vpr)
+    real*8 :: uip(7)
+
+    real*8 :: s1,s2,s3,s4,vtp2
+    integer*4 :: ir2,ir1,iz2,iz1
+
+    real*8 :: magdir(1:3)
+    real*8 :: br, bz, bb
+
+    integer*4 :: n_sm
+
+    do ip = 1, n_active
+        call calcRaw
+        call depoStatistic
+        call restStatistic
+        call smooStatistic
+    end do
+
+contains
+    subroutine calcRaw
+        xx = x(ip,1)
+        yy = x(ip,2)
+        zz = x(ip,3)
+        vx = v(ip,1)
+        vy = v(ip,2)
+        vz = v(ip,3)
+
+        rtp = sqrt(xx**2 + yy**2) + 1e-20
+        sinth = yy / rtp
+        costh = xx / rtp
+
+        vr = vx * costh + vy * sinth
+        vth = -vx * sinth + vy * costh
+        
+        s1=x_to_grid(ip,1)*x_to_grid(ip,2)
+        s2=x_to_grid(ip,1)*(1.-x_to_grid(ip,2))
+        s3=(1.-x_to_grid(ip,1))*(1.-x_to_grid(ip,2))
+        s4=(1.-x_to_grid(ip,1))*x_to_grid(ip,2)
+
+        ir1=ir1_iz1_grid(ip,1)
+        iz1=ir1_iz1_grid(ip,2)
+        ir2=ir1+1
+        iz2=iz1+1
+
+        br=s3*b0_DC(ir1,iz1,1)+s1*b0_DC(ir2,iz2,1)+s2*b0_DC(ir2,iz1,1)+s4*b0_DC(ir1,iz2,1);
+        bz=s3*b0_DC(ir1,iz1,3)+s1*b0_DC(ir2,iz2,3)+s2*b0_DC(ir2,iz1,3)+s4*b0_DC(ir1,iz2,3);
+        bb=sqrt(br**2+bz**2)
+
+        magdir(1)=br/bb
+        magdir(2)=0.0d0
+        magdir(3)=bz/bb
+
+        vl=vr*magdir(1)+vz*magdir(3)
+        vpr=vr*magdir(3)-vz*magdir(1)
+        
+        uip = (/vx, vy, vz, vr, vth, vl, vpr/)
+    end subroutine calcRaw
+
+    subroutine depoStatistic
+        nu_depo(ir1,iz1,:)=nu_depo(ir1,iz1,:)+s3*uip(:)
+        nu_depo(ir2,iz2,:)=nu_depo(ir2,iz2,:)+s1*uip(:)
+        nu_depo(ir2,iz1,:)=nu_depo(ir2,iz1,:)+s2*uip(:)
+        nu_depo(ir1,iz2,:)=nu_depo(ir1,iz2,:)+s4*uip(:)
+
+        n_depo(ir1,iz1)=n_depo(ir1,iz1)+s3
+        n_depo(ir2,iz2)=n_depo(ir2,iz2)+s1
+        n_depo(ir2,iz1)=n_depo(ir2,iz1)+s2
+        n_depo(ir1,iz2)=n_depo(ir1,iz2)+s4
+    end subroutine depoStatistic
+
+    subroutine restStatistic
+        ! If nu_depo = 0 is originally set
+        ! where n_depo = 0 should also have nu_depo = 0.
+        ! In this case, divide n_depo + 1e-20 is just like
+        ! lazy too write a if
+        nu_depo(ir1,iz1,:)=nu_depo(ir1,iz1,:)/max(n_depo(ir1,iz1),1e-20)
+        nu_depo(ir2,iz2,:)=nu_depo(ir2,iz2,:)/max(n_depo(ir2,iz2),1e-20)
+        nu_depo(ir2,iz1,:)=nu_depo(ir2,iz1,:)/max(n_depo(ir2,iz1),1e-20)
+        nu_depo(ir1,iz2,:)=nu_depo(ir1,iz2,:)/max(n_depo(ir1,iz2),1e-20)
+    end subroutine restStatistic
+
+    subroutine smooStatistic
+        ir1=1;ir2=nr_vac(1);iz1=1;iz2=nz;
+        do itp=1,2
+            if(itp==1)n_sm=3
+            if(itp==2)n_sm=2
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,n_depo(ir1:ir2,iz1:iz2)) ! N
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_depo(ir1:ir2,iz1:iz2,1)) ! vx
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_depo(ir1:ir2,iz1:iz2,2)) ! vy
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_depo(ir1:ir2,iz1:iz2,3)) ! vz
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_depo(ir1:ir2,iz1:iz2,4)) ! vr
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_depo(ir1:ir2,iz1:iz2,5)) ! vth
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_depo(ir1:ir2,iz1:iz2,6)) ! vl
+            call smooth_2d(n_sm,2*n_sm,ir1,ir2,iz1,iz2,nu_depo(ir1:ir2,iz1:iz2,7)) ! vpr
+        enddo
+    end subroutine smooStatistic
+end subroutine findVelocity

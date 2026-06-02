@@ -223,6 +223,7 @@ module the_whole_varibles
 
     integer*4 :: iswitch_vacum_dielectric_type
     
+    real*8,allocatable :: nu_depo(:,:,:), n_depo(:,:)
 end module the_whole_varibles
 
 Program hypic

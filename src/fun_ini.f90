@@ -47,7 +47,8 @@ subroutine initialize
         & deltaNtype, &
         & CrCzType, &
         & Cr_guess, &
-        & Cz_guess
+        & Cz_guess, &
+        & width_ne_r
     
     namelist /dev/ &
         & dev_Only4CalMag, &
@@ -62,6 +63,7 @@ subroutine initialize
     iswitch_v_closure_type=1
     iswitch_T_closure_type=0
     TminLim=3.0d0
+    width_ne_r=0.005d0
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=ini)
@@ -194,7 +196,7 @@ subroutine initialize
     !z_inject_cener=-0.17; !@namelist
     !m, zc, central axial position of inject particle   
 
-    width_ne_r=0.005       !m, rw
+    !width_ne_r=0.005      !@namelist
     width_ne_z=0.1         !m, zw
     width_ne_source_r=0.005
     width_ne_source_z=0.05

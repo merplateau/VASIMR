@@ -245,25 +245,32 @@ subroutine find_x_to_grid !here x means (x,y,z)
     USE the_whole_varibles
     implicit none
     integer::ir_tp,iz_tp
-    real*8::r_p(1:n_active)
+    real*8::rtp,ztp
 
     !r: s1= x_to_grid(1:n_active,1),s2=1-s1; z: s3= x_to_grid(1:n_active,2),s4=1-s3;
-    x_to_grid=0.
-    r_p(1:n_active)=sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2)
-    ir1_iz1_grid(1:n_active,1)=int((r_p(1:n_active)-r(1))/dr)+1
-    ir1_iz1_grid(1:n_active,2)=int((x(1:n_active,3)-z(1))/dz)+1
+    x_to_grid(1:n_active,1:2)=0.0d0
+    ir1_iz1_grid(1:n_active,1:2)=0
     do ip=1,n_active
-        ir_tp=ir1_iz1_grid(ip,1)
-        iz_tp=ir1_iz1_grid(ip,2)
-        x_to_grid(ip,1)=(r_p(ip)-r(ir_tp))/dr
-        x_to_grid(ip,2)=(x(ip,3)-z(iz_tp))/dz
+        rtp=sqrt(x(ip,1)**2+x(ip,2)**2)
+        ztp=x(ip,3)
+        if(isnan(rtp) .or. isnan(ztp))cycle
+        if(rtp<r(1) .or. rtp>=r(nr) .or. ztp<z(1) .or. ztp>=z(nz))cycle
+
+        ir_tp=int((rtp-r(1))/dr)+1
+        iz_tp=int((ztp-z(1))/dz)+1
+        if(ir_tp<1 .or. ir_tp>=nr .or. iz_tp<1 .or. iz_tp>=nz)cycle
+
+        ir1_iz1_grid(ip,1)=ir_tp
+        ir1_iz1_grid(ip,2)=iz_tp
+        x_to_grid(ip,1)=(rtp-r(ir_tp))/dr
+        x_to_grid(ip,2)=(ztp-z(iz_tp))/dz
     enddo
 end subroutine find_x_to_grid
 
 subroutine interpolation_E_B(B_mover,E_mover)
     USE the_whole_varibles
     implicit none
-    INTEGER*2:: ir1,ir2,iz1,iz2
+    INTEGER:: ir1,ir2,iz1,iz2
     INTEGER  :: ixtp,iytp
     real*8::sinth,costh,erthz(1:3),xtp,ytp,rtp,th_tp
     complex*16::c1_6(1:6),Em_tp(1:3)
@@ -271,9 +278,12 @@ subroutine interpolation_E_B(B_mover,E_mover)
     real*8:: B_mover(1:3),E_mover(1:3)
     Real*8::s1,s2,s3,s4
     Real*8::br,bz
-    Real*8::Es_dc(1:3)=0
+    Real*8::Es_dc(1:3)
     
     !B_mover,E_mover - Bx By Bz Ex Ey Ez
+    B_mover=0.0d0
+    E_mover=0.0d0
+    Es_dc=0.0d0
 
     rtp=sqrt(x(ip,1)**2+x(ip,2)**2)+1e-20;
     xtp=x(ip,1)
@@ -290,6 +300,7 @@ subroutine interpolation_E_B(B_mover,E_mover)
     iz1=ir1_iz1_grid(ip,2)
     ir2=ir1+1
     iz2=iz1+1
+    if(ir1<1 .or. ir2>nr .or. iz1<1 .or. iz2>nz)return
 
     br=s3*b0_DC(ir1,iz1,1)+s1*b0_DC(ir2,iz2,1)+s2*b0_DC(ir2,iz1,1)+s4*b0_DC(ir1,iz2,1);
     bz=s3*b0_DC(ir1,iz1,3)+s1*b0_DC(ir2,iz2,3)+s2*b0_DC(ir2,iz1,3)+s4*b0_DC(ir1,iz2,3);
@@ -505,15 +516,16 @@ subroutine density_Ek_2D_sub
     !  |s1| |s2|
 
     do ip=1,n_active
-        s1=x_to_grid(ip,1)*x_to_grid(ip,2)
-        s2=x_to_grid(ip,1)*(1.-x_to_grid(ip,2))
-        s3=(1.-x_to_grid(ip,1))*(1.-x_to_grid(ip,2))
-        s4=(1.-x_to_grid(ip,1))*x_to_grid(ip,2)
-
         ir1=ir1_iz1_grid(ip,1)
         iz1=ir1_iz1_grid(ip,2)
         ir2=ir1+1
         iz2=iz1+1
+        if(ir1<1 .or. ir2>nr .or. iz1<1 .or. iz2>nz)cycle
+
+        s1=x_to_grid(ip,1)*x_to_grid(ip,2)
+        s2=x_to_grid(ip,1)*(1.-x_to_grid(ip,2))
+        s3=(1.-x_to_grid(ip,1))*(1.-x_to_grid(ip,2))
+        s4=(1.-x_to_grid(ip,1))*x_to_grid(ip,2)
 
         density_2D(ir1,iz1)=density_2D(ir1,iz1)+s3
         density_2D(ir2,iz2)=density_2D(ir2,iz2)+s1
@@ -627,7 +639,7 @@ end subroutine smooth_2d
 subroutine escape_and_inject
     USE the_whole_varibles
     implicit none
-    INTEGER*2::ip2,iloss
+    integer::ip2,iloss
     real*8::zb0,rb1,zb1,zb2,rtp,ztp,v2_lim,vtp2!rb3,zb3,rb4,zb4,
     logical :: lost
     call find_func_cputime_1_of_2  !-------------------1/2
@@ -699,7 +711,7 @@ end subroutine remove_particle
 subroutine register_particle_loss(iloss)
     USE the_whole_varibles
     implicit none
-    INTEGER*2::iloss
+    integer::iloss
     real*8::rtp,delat_t
     !when the ion escapes and then inject a new particle
     !replace the information of old particle (ip) with new born particle  

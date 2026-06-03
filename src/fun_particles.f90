@@ -487,11 +487,11 @@ subroutine find_Es_bdry(i0,i1,i2,iEs)
     endif
 
     if(iEs==3)then
-        Es_2D(i1:i2,i0,2)=-te_2D(i1:i2,i0)*(density_2D(i1:i2,i0+1)-density_2D(i1:i2,i0))/(dr*density_2D(i1:i2,i0))
+        Es_2D(i1:i2,i0,2)=-te_2D(i1:i2,i0)*(density_2D(i1:i2,i0+1)-density_2D(i1:i2,i0))/(dz*density_2D(i1:i2,i0))
     endif
 
     if(iEs==4)then
-        Es_2D(i1:i2,i0,2)=-te_2D(i1:i2,i0)*(density_2D(i1:i2,i0)-density_2D(i1:i2,i0-1))/(dr*density_2D(i1:i2,i0))
+        Es_2D(i1:i2,i0,2)=-te_2D(i1:i2,i0)*(density_2D(i1:i2,i0)-density_2D(i1:i2,i0-1))/(dz*density_2D(i1:i2,i0))
     endif
 end subroutine find_Es_bdry
 

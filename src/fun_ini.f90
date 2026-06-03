@@ -29,6 +29,7 @@ subroutine initialize
         & irf_set, &
         & resistance, &
         & i_switch_B0, &
+        & export_real_B0, &
         & max_density_set, &
         & vz0, &
         & vl_in_FDFD, &
@@ -64,6 +65,7 @@ subroutine initialize
     iswitch_T_closure_type=0
     TminLim=3.0d0
     width_ne_r=0.005d0
+    export_real_B0=0
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=ini)
@@ -233,6 +235,7 @@ subroutine initialize
         b0_DC=b0_DC*B0_correction_factor
     endif
     bz_max=maxval(b0_DC(1:2,1:nz,4))
+    if(export_real_B0==1)call record_real_B0
     
 
     te_ave=te_ini
@@ -299,6 +302,17 @@ subroutine initialize
     
     if ((iswitch_dielectric == 3 .or. iswitch_dielectric == 4) .and. k_closure_type == 2) call readKapFromFile
 end subroutine initialize
+
+subroutine record_real_B0
+    use the_whole_varibles
+    implicit none
+
+32  format(<nr>(e12.4,' '))
+    open (unit=107,file=trim(outputDir)//trim('B0_real_load.txt'),status='unknown',iostat=ierror)
+    write (107,32)b0_DC(1:nr,1:nz,1)
+    write (107,32)b0_DC(1:nr,1:nz,3)
+    close (107)
+end subroutine record_real_B0
 
 subroutine rec_para
     use the_whole_varibles

@@ -78,6 +78,7 @@ module the_whole_varibles
 
     !initial
     integer:: iswitch_display,i_switch_B0,iswitch_dielectric,i_switch_power_mode,i_switch_MHD_Te,use_file_defined_density
+    integer:: export_real_B0
     integer :: iswitch_v_closure_type
     integer :: k_closure_type = 1
     real*8 :: bz_max,ti_ini,te_ini,pn,B0_correction_factor,B_resonance,t_power_on,nn,max_density_set,ni_ave_ratio

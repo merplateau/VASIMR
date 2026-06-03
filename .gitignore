@@ -4,3 +4,7 @@
 !.gitattributes
 !src/
 !src/**
+
+!run.bat
+!compile.bat
+!config.json

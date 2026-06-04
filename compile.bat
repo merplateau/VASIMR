@@ -24,7 +24,8 @@ goto parse
 
 if "%DEBUG%"=="1" (
     rem 注：不加 /fpe-all:0 —— MKL(pardiso)内部的推测式浮点会误触发该陷阱
-    set "DBGFLAGS=/Od /debug:full /traceback /check:all"
+    rem 注：/check:noarg_temp_created 关掉"创建数组临时量"的刷屏警告(无害的性能提示)
+    set "DBGFLAGS=/Od /debug:full /traceback /check:all /check:noarg_temp_created"
     echo [compile.bat] DEBUG build: %DBGFLAGS%
 ) else (
     set "DBGFLAGS="

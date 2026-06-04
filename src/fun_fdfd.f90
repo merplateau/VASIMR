@@ -883,8 +883,8 @@ subroutine coo_to_csr(A,A_csr3)
     do rowcount=1,A.n
         A_csr3.row(rowcount+1)=A_csr3.row(rowcount)+rownum(rowcount)
     end do
-    A_csr3.col(:)=A.col(:)
-    A_csr3.val(:)=A.val(:)
+    A_csr3.col(1:A.nzmax)=A.col(1:A.nzmax)
+    A_csr3.val(1:A.nzmax)=A.val(1:A.nzmax)
 end subroutine coo_to_csr
 
 subroutine reallocate(A,nzmax_input)

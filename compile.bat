@@ -23,7 +23,8 @@ goto parse
 :after_parse
 
 if "%DEBUG%"=="1" (
-    set "DBGFLAGS=/Od /debug:full /traceback /check:all /fpe-all:0"
+    rem 注：不加 /fpe-all:0 —— MKL(pardiso)内部的推测式浮点会误触发该陷阱
+    set "DBGFLAGS=/Od /debug:full /traceback /check:all"
     echo [compile.bat] DEBUG build: %DBGFLAGS%
 ) else (
     set "DBGFLAGS="

@@ -452,20 +452,23 @@ subroutine record_profile_ion_rz
     implicit none
     character*30 fname
     character*256 fullpath
+    integer*4 :: ip_rec
 
-323 format(<n_active>(e12.5,' '))
+323 format(7(e12.5,' '))
 123 format('ion_rz_',i0,'.dat')
 
     write (fname,123)ifig
     fullpath=trim(outputDir)//trim(fname)
     open (unit=23,file=fullpath,status='unknown',iostat=ierror)
-    write (23,323)sqrt(x(1:n_active,1)**2+x(1:n_active,2)**2 )!ion_r(1:np_max)
-    write (23,323)x(1:n_active,3)
-    write (23,323)v(1:n_active,1)
-    write (23,323)v(1:n_active,2)
-    write (23,323)v(1:n_active,3)
-    write (23,323)t-life_and_ek(1:n_active,1)
-    write (23,323)life_and_ek(1:n_active,2)
+    do ip_rec=1,n_active
+        write (23,323)sqrt(x(ip_rec,1)**2+x(ip_rec,2)**2), &
+            & x(ip_rec,3), &
+            & v(ip_rec,1), &
+            & v(ip_rec,2), &
+            & v(ip_rec,3), &
+            & t-life_and_ek(ip_rec,1), &
+            & life_and_ek(ip_rec,2)
+    enddo
     close(23)
 end subroutine record_profile_ion_rz
 

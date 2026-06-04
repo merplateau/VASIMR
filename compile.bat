@@ -25,7 +25,7 @@ goto parse
 if "%DEBUG%"=="1" (
     rem 注：不加 /fpe-all:0 —— MKL(pardiso)内部的推测式浮点会误触发该陷阱
     rem 注：/check:noarg_temp_created 关掉"创建数组临时量"的刷屏警告(无害的性能提示)
-    set "DBGFLAGS=/Od /debug:full /traceback /check:all /check:noarg_temp_created"
+    set "DBGFLAGS=/Od /debug:full /check:all /check:noarg_temp_created"
     echo [compile.bat] DEBUG build: %DBGFLAGS%
 ) else (
     set "DBGFLAGS="
@@ -37,6 +37,7 @@ call "D:\Program Files (x86)\Intel\oneAPI\setvars.bat"
 
 cd /d "%~dp0src"
 
-ifx %DBGFLAGS% hypic.f90 fun_b0.f90 fun_record_display.f90 fun_grid.f90 fun_ini.f90 fun_antenna_irf.f90 fun_particles.f90 fun_mcc.f90 fun_fdfd.f90 /Qmkl /object:..\tmp\ /module:..\tmp\ -o ..\bin\%V%.exe /link /STACK:500000000
+rem /traceback 始终启用：不影响优化、几乎零开销，崩溃时能打印出错的文件名+行号
+ifx /traceback %DBGFLAGS% hypic.f90 fun_b0.f90 fun_record_display.f90 fun_grid.f90 fun_ini.f90 fun_antenna_irf.f90 fun_particles.f90 fun_mcc.f90 fun_fdfd.f90 /Qmkl /object:..\tmp\ /module:..\tmp\ -o ..\bin\%V%.exe /link /STACK:500000000
 
 endlocal

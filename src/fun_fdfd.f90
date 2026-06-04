@@ -862,7 +862,9 @@ subroutine complex_coo_pardiso_solve(A,x_plasma,B_rf)
     maxfct=1;mnum=1;mtype=13;phase=13;nrhs=1;iparm(:)=0;msglvl=0;pt(:)=0
     iparm(3)=4 !OMP_NUM_THREADS
     call pardiso(pt,maxfct,mnum,mtype,phase,A_csr3.n,A_csr3.val,A_csr3.row,A_csr3.col,perm,nrhs,iparm,msglvl,B_rf,x_plasma,error)
-    !call mkl_free_buffers
+    ! 释放 pardiso 内部内存(否则每次求解都泄漏因子内存，累积耗尽内存崩溃)
+    phase=-1
+    call pardiso(pt,maxfct,mnum,mtype,phase,A_csr3.n,A_csr3.val,A_csr3.row,A_csr3.col,perm,nrhs,iparm,msglvl,B_rf,x_plasma,error)
     deallocate(perm)
     deallocate(A_csr3.row,A_csr3.col,A_csr3.val)
 end subroutine complex_coo_pardiso_solve

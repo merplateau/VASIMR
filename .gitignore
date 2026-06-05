@@ -8,3 +8,10 @@
 !run.bat
 !compile.bat
 !config.json
+
+!README.md
+
+!bin/
+!bin/.gitkeep
+!tmp/
+!tmp/.gitkeep

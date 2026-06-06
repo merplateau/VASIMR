@@ -33,6 +33,7 @@ subroutine initialize
         & max_density_set, &
         & vz0, &
         & vl_in_FDFD, &
+        & alpha_v, &
         & n_pic, &
         & z_inject_cener, &
         & z_resonance, &
@@ -63,6 +64,7 @@ subroutine initialize
     ! default value, can be changed by namelist
     iswitch_v_closure_type=1
     iswitch_T_closure_type=0
+    alpha_v=1.0d0
     TminLim=3.0d0
     width_ne_r=0.005d0
     export_real_B0=0

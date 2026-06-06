@@ -182,7 +182,7 @@ module the_whole_varibles
     integer :: iswitch_specific_mode
     integer :: m_specific
 
-    real*8 :: vl_in_FDFD
+    real*8 :: vl_in_FDFD, alpha_v
 
     integer*4 :: iswitch_log
 
@@ -227,7 +227,7 @@ module the_whole_varibles
 
     integer*4 :: iswitch_vacum_dielectric_type
     
-    real*8,allocatable :: nu_depo(:,:,:), u2_depo(:,:,:), t_depo(:,:,:), n_depo(:,:)
+    real*8,allocatable :: nu_depo(:,:,:), u2_depo(:,:,:), t_depo(:,:,:), n_depo(:,:), vl_closure_prev(:,:)
     integer*4 :: statistic_trigger=0, statistic_acc_number=0, statistic_ready=0
 end module the_whole_varibles
 

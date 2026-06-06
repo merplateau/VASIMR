@@ -146,7 +146,7 @@ subroutine find_Dielectric_tensor
     use the_whole_varibles
     implicit none
     integer*8::n_err,n_sec
-    real*8::ikap,vl,fcr,err_kap
+    real*8::ikap,vl,vl_pic,fcr,err_kap
     real*8::tpp(1:2,1:2)! parallel or perp; i or e ; eV
     real*8::ti_ll,ti_perp,te_ll,te_perp
     complex*16::err_now,kap1,kap2,kapt,scat
@@ -220,7 +220,10 @@ subroutine find_Dielectric_tensor
                 if(iswitch_v_closure_type==1)then
                     vl = vl_in_FDFD
                 elseif(iswitch_v_closure_type==2)then
-                    if(statistic_ready==1 .and. n_depo(ir,iz)>=1.0d-10) vl = nu_depo(ir,iz,6)
+                    vl_pic = vl_closure_prev(ir,iz)
+                    if(statistic_ready==1 .and. n_depo(ir,iz)>=1.0d-10) vl_pic = nu_depo(ir,iz,6)
+                    vl_closure_prev(ir,iz) = (1.0d0-alpha_v)*vl_closure_prev(ir,iz) + alpha_v*vl_pic
+                    vl = vl_closure_prev(ir,iz)
                 endif
             endif
 

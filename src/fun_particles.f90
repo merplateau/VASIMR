@@ -219,6 +219,8 @@ subroutine injection_inlet_sub(ip_set)
     life_and_ek(ip_set,1)=t
     life_and_ek(ip_set,2)=mass_q_i_05*sum(v(ip_set,1:3)**2)
     Ek_inject_tol=Ek_inject_tol+life_and_ek(ip_set,2)
+    perf_inject_momentum_z=perf_inject_momentum_z+v(ip_set,3)
+    perf_inject_count=perf_inject_count+1.0d0
 end subroutine injection_inlet_sub
 
 subroutine mover
@@ -687,6 +689,7 @@ subroutine escape_and_inject
     n_active=n_active+deltaN
     np_e=n_active
     num_inject=deltaN
+    call update_performance_period
     call find_func_cputime_2_of_2(func_time(2))  !-----2/2
 end subroutine escape_and_inject
 
@@ -736,8 +739,48 @@ subroutine register_particle_loss(iloss)
     Ek_loss_tol(iloss)=Ek_loss_tol(iloss)+mass_q_i_05*sum(v(ip,1:3)**2)
     num_loss(iloss)=num_loss(iloss)+1
     N_lost_particles=N_lost_particles+1
+    if(iloss==2)then
+        perf_exit_momentum_z=perf_exit_momentum_z+v(ip,3)
+        perf_exit_count=perf_exit_count+1.0d0
+    endif
 
 end subroutine register_particle_loss
+
+subroutine update_performance_period
+    USE the_whole_varibles
+    implicit none
+    real*8, parameter :: g0=9.80665d0
+    real*8 :: perf_dt, mdot_in, mdot_out
+
+    if(t-perf_t0<trf)return
+
+    perf_dt=max(t-perf_t0,1.0d-30)
+    thrust_total=perf_exit_momentum_z*n_macro*mi/perf_dt
+    thrust_source=(perf_exit_momentum_z-perf_inject_momentum_z)*n_macro*mi/perf_dt
+
+    mdot_in=deltaN*n_macro*mi/dt
+    mdot_out=perf_exit_count*n_macro*mi/perf_dt
+
+    if(mdot_in>0.0d0)then
+        ISP_global=thrust_source/(mdot_in*g0)
+    else
+        ISP_global=0.0d0
+    endif
+
+    if(mdot_out>0.0d0)then
+        ISP_plume=thrust_total/(mdot_out*g0)
+    else
+        ISP_plume=0.0d0
+    endif
+
+    call record_performance_history
+
+    perf_exit_momentum_z=0.0d0
+    perf_inject_momentum_z=0.0d0
+    perf_exit_count=0.0d0
+    perf_inject_count=0.0d0
+    perf_t0=t
+end subroutine update_performance_period
 
 subroutine ensure_particle_capacity(required_capacity)
     USE the_whole_varibles

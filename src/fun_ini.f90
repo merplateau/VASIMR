@@ -293,6 +293,8 @@ subroutine initialize
     if(iswitch_log==1)then
         open (unit=44,file=trim(outputDir)//trim('1loading_history.dat'),status='replace',iostat=ierror)
         close(44)
+        open (unit=45,file=trim(outputDir)//trim('1performance_history.dat'),status='replace',iostat=ierror)
+        close(45)
     endif
 
     if (iswitch_analytic_profile == 1 .or. iswitch_analytic_profile == 2) then
@@ -632,6 +634,15 @@ subroutine power_ini
     Ek_loss_cumulative = 0.0
     Ek_inject_tol = 0.0d0
     absorbed_power = 0.0
+    thrust_source = 0.0d0
+    thrust_total = 0.0d0
+    ISP_global = 0.0d0
+    ISP_plume = 0.0d0
+    perf_exit_momentum_z = 0.0d0
+    perf_inject_momentum_z = 0.0d0
+    perf_exit_count = 0.0d0
+    perf_inject_count = 0.0d0
+    perf_t0 = t
 end subroutine power_ini
 
 subroutine configure_variable_particles

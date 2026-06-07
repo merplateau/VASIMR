@@ -116,6 +116,10 @@ module the_whole_varibles
     real*8:: t1_taup=0.
     real*8, allocatable :: life_and_ek(:,:)
     real*8 :: Ek_total_last_joules=0.0d0, Ek_total_current_joules=0.0d0
+    real*8 :: thrust_source=0.0d0, thrust_total=0.0d0
+    real*8 :: ISP_global=0.0d0, ISP_plume=0.0d0
+    real*8 :: perf_exit_momentum_z=0.0d0, perf_inject_momentum_z=0.0d0
+    real*8 :: perf_exit_count=0.0d0, perf_inject_count=0.0d0, perf_t0=0.0d0
 
     !particles
     integer*4,parameter:: iseed=1234567,nrec_t=42,nrec_p=20,te_update_interval=1000

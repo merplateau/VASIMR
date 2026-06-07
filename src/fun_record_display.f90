@@ -125,7 +125,7 @@ subroutine display_main
         
         else if (iswitch_log == 1) then
             if (.not. first_log_display) then
-                write(*,'(a)',advance='no') esc//'[6A'
+                write(*,'(a)',advance='no') esc//'[8A'
             endif
             
             write(*, "(a,'------------------------------------------------------------------------')") esc//'[2K'
@@ -137,6 +137,10 @@ subroutine display_main
                 esc//'[2K', nint(2*ptotal/(irf_set**2)*1e3)
             write(*, "(a,'recorded ', I0, ' of ', I0)") &
                 esc//'[2K', ifig-1,n_pic
+            write(*, "(a,'Ts, Tt = ', f0.3, ', ', f0.3, ' mN')") &
+                esc//'[2K', thrust_source*1.0d3, thrust_total*1.0d3
+            write(*, "(a,'ISPg, ISPp = ', f0.1, ', ', f0.1, ' s')") &
+                esc//'[2K', ISP_global, ISP_plume
             write(*, "(a,'n_active = ', I0)") &
                 esc//'[2K', n_active
 
@@ -177,6 +181,22 @@ subroutine record_loading_history(event_type)
     write(44,300)event_type,t,it,absorbed_loading,deposited_loading,Ek_total_current_joules
     close(44)
 end subroutine record_loading_history
+
+
+subroutine record_performance_history
+    USE the_whole_varibles
+    implicit none
+    integer*4 :: ierror_log
+
+    if(iswitch_log/=1)return
+
+300 format(e14.7,1x,i12,4(1x,e14.7))
+    open(unit=45,file=trim(outputDir)//trim('1performance_history.dat'), &
+        status='unknown',position='append',iostat=ierror_log)
+    if(ierror_log/=0)return
+    write(45,300)t,it,thrust_source,thrust_total,ISP_global,ISP_plume
+    close(45)
+end subroutine record_performance_history
 
 
 

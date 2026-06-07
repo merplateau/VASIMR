@@ -115,6 +115,8 @@ module the_whole_varibles
     real*8,allocatable :: xv_loss(:,:)
     real*8:: t1_taup=0.
     real*8, allocatable :: life_and_ek(:,:)
+    integer*4, allocatable :: particle_id(:)
+    integer*4 :: particle_id_counter=0
     real*8 :: Ek_total_last_joules=0.0d0, Ek_total_current_joules=0.0d0
     real*8 :: thrust_source=0.0d0, thrust_total=0.0d0
     real*8 :: ISP_global=0.0d0, ISP_plume=0.0d0
@@ -236,6 +238,10 @@ module the_whole_varibles
     !integer*4 :: recErf
 
     integer*4 :: dev_Only4CalE
+    integer*4 :: dev_only_replay
+    integer*4 :: iswitch_frozen_field
+    character(len=256) :: replayFieldDir
+    character(len=256) :: replayTrajectoryDir
 
     integer*4 :: iswitch_vacum_dielectric_type
     
@@ -259,6 +265,16 @@ Program hypic
     call start_ftime
 
     call initialize
+
+    if(dev_only_replay==1)then
+        if(iswitch_display/=0) write(*,*)'dev_only_replay: loading frozen replay fields.'
+        call load_replay_fields
+        call play_trajectory
+        close(42)
+        close(43)
+        write(*,*) 'dev_only_replay has finished !!! '
+        stop
+    endif
     
     if(iswitch_display/=0) write(*,*)'Fun_ini finished. Fun_fdfd is running.'
     call maxwell_FDFD
@@ -298,6 +314,7 @@ Program hypic
     ! call resetParameters
     ! call maxwell_FDFD
 
+    if(iswitch_frozen_field==1) call record_replay_fields
     close(42)
     close(43)
     call display_main

@@ -117,6 +117,7 @@ subroutine dev_FDFD_post
     implicit none
 
     call record_dev_FDFD
+    if(iswitch_frozen_field==1)call record_replay_fields
     stop 'stop after dev_FDFD_post for only calculating E and dielectric tensor'
 
 end subroutine dev_FDFD_post

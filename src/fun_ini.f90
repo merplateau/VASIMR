@@ -42,7 +42,11 @@ subroutine initialize
         & kapDir, &
         & plasmaLoadDir, &
         & iswitch_log, &
-        & iswitch_play_trajectory
+        & iswitch_play_trajectory, &
+        & iswitch_frozen_field, &
+        & dev_only_replay, &
+        & replayFieldDir, &
+        & replayTrajectoryDir
 
     namelist /injectionConfig/ &
         & n0_set, &
@@ -55,12 +59,21 @@ subroutine initialize
     
     namelist /dev/ &
         & dev_Only4CalMag, &
-        & dev_Only4CalE
+        & dev_Only4CalE, &
+        & iswitch_frozen_field, &
+        & dev_only_replay, &
+        & replayFieldDir, &
+        & replayTrajectoryDir
     
 
     call start_ftime
 
-    call setRec
+    dev_Only4CalMag=0
+    dev_Only4CalE=0
+    dev_only_replay=0
+    iswitch_frozen_field=0
+    replayFieldDir=''
+    replayTrajectoryDir=''
 
     ! default value, can be changed by namelist
     iswitch_v_closure_type=1
@@ -83,7 +96,11 @@ subroutine initialize
     read(nmlid, nml=dev)
     close(nmlid)
 
+    if(len_trim(replayFieldDir)==0)replayFieldDir=outputDir
+    if(len_trim(replayTrajectoryDir)==0)replayTrajectoryDir=outputDir
+
     call mkdir_if_not_exist
+    call setRec
 
     !np_max = 10000 !@namelist
 
@@ -721,12 +738,14 @@ subroutine allocate_particle_arrays
     allocate(v_e(1:n_capacity,1:3))
     allocate(t_np(1:n_capacity))
     allocate(x_to_grid(1:n_capacity,1:2))
+    allocate(particle_id(1:n_capacity))
     x=0.0d0
     v=0.0d0
     v_e=0.0d0
     t_np=0.0d0
     x_to_grid=0.0d0
     ir1_iz1_grid=0
+    particle_id=0
     np_loss_rec = n_capacity
     if (rec_xv_loss == 1) then
         allocate(xv_loss(1:np_loss_rec,1:7))
@@ -817,15 +836,24 @@ subroutine mkdir_if_not_exist
     use the_whole_varibles
     implicit none
 
+    call mkdir_one_dir(outputDir)
+    if(len_trim(replayFieldDir)>0)call mkdir_one_dir(replayFieldDir)
+    if(len_trim(replayTrajectoryDir)>0)call mkdir_one_dir(replayTrajectoryDir)
+end subroutine mkdir_if_not_exist
+
+subroutine mkdir_one_dir(dir_name)
+    implicit none
+    character(len=*), intent(in) :: dir_name
     logical :: dirExists
     integer :: cmdstat
     character(len=600) :: cmd
-    inquire(file=trim(outputDir), exist=dirExists)
+
+    inquire(file=trim(dir_name), exist=dirExists)
     if (.not. dirExists) then
-        cmd = 'mkdir "' // trim(outputDir) // '"'
+        cmd = 'mkdir "' // trim(dir_name) // '"'
         call execute_command_line(trim(cmd), exitstat=cmdstat)
     end if
-end subroutine mkdir_if_not_exist
+end subroutine mkdir_one_dir
 
 subroutine setRec
     use the_whole_varibles

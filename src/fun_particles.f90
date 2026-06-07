@@ -216,6 +216,8 @@ subroutine injection_inlet_sub(ip_set)
 
     call set_particle_velocity(ip_set)
     t_np(ip_set)=t
+    particle_id_counter=particle_id_counter+1
+    particle_id(ip_set)=particle_id_counter
     life_and_ek(ip_set,1)=t
     life_and_ek(ip_set,2)=mass_q_i_05*sum(v(ip_set,1:3)**2)
     Ek_inject_tol=Ek_inject_tol+life_and_ek(ip_set,2)
@@ -773,6 +775,7 @@ subroutine remove_particle(ip_remove)
         life_and_ek(ip_remove,1:2)=life_and_ek(n_active,1:2)
         x_to_grid(ip_remove,1:2)=x_to_grid(n_active,1:2)
         ir1_iz1_grid(ip_remove,1:2)=ir1_iz1_grid(n_active,1:2)
+        particle_id(ip_remove)=particle_id(n_active)
     endif
     n_active=n_active-1
 end subroutine remove_particle
@@ -851,9 +854,11 @@ end subroutine update_performance_period
 subroutine play_trajectory
     USE the_whole_varibles
     implicit none
-    integer*4 :: n_steps,i_step,ip_new_start,ip_new_end,play_required
+    integer*4 :: n_inject_steps,max_steps,i_step,ip_new_start,ip_new_end
+    integer*4 :: n_lost_step,n_lost_total,n_injected_total
     integer*4 :: ierror_play
-    real*8 :: t_save,t_play0,rtp,costh,sinth,vr,vph,br,bz,bb,vl,vpr
+    real*8 :: t_save,t_play0,t_play_max,rtp,costh,sinth,vr,vph,br,bz,bb,vl,vpr
+    real*8 :: state_power_save
     real*8 :: B_play(1:3),Erf_play(1:3),Es_play(1:3),E_total(1:3)
     real*8 :: v_cross_b(1:3),force_lorentz(1:3),force_total(1:3)
     real*8 :: dW_Erf,dW_Es
@@ -861,30 +866,48 @@ subroutine play_trajectory
 
 300 format(i8,1x,i10,28(1x,e14.7))
 
-    n_steps=max(1,nint(trf/dt))
-    play_required=max(deltaN*n_steps,1)
-    call ensure_particle_capacity(play_required)
+    n_inject_steps=max(1,nint(trf/dt))
+    t_play_max=1.2d0*(zd-zs)/max(abs(vz0),1.0d-30)
+    max_steps=max(n_inject_steps,ceiling(t_play_max/dt))
+    call ensure_particle_capacity(max(deltaN*n_inject_steps,1))
 
-    fullpath=trim(outputDir)//trim('1play_trajectory.dat')
+    call make_replay_path(replayTrajectoryDir,'1play_trajectory.dat',fullpath)
     open(unit=46,file=fullpath,status='replace',iostat=ierror_play)
     if(ierror_play/=0)return
     write(46,'(a)') '# step id t x y z vx vy vz vl vpr vph Bx By Bz ' // &
         'Erfx Erfy Erfz Esx Esy Esz FLx FLy FLz FTx FTy FTz WErf WEs Wtot'
 
     t_save=t
-    t_play0=t
+    state_power_save=state_power_on_off
+    t_play0=0.0d0
+    state_power_on_off=1.0d0
     n_active=0
     np_e=0
+    n_lost_total=0
+    n_injected_total=0
+    particle_id_counter=0   ! 重播粒子 id 从 1 重新计数
 
-    do i_step=1,n_steps
+    do i_step=1,max_steps
         t=t_play0+real(i_step-1,8)*dt
-        ip_new_start=n_active+1
-        ip_new_end=n_active+deltaN
-        do ip=ip_new_start,ip_new_end
-            call injection_inlet_sub(ip)
-        enddo
-        n_active=ip_new_end
-        np_e=n_active
+
+        call escape_play_particles(n_lost_step)
+        n_lost_total=n_lost_total+n_lost_step
+
+        if(i_step<=n_inject_steps)then
+            call ensure_particle_capacity(n_active+deltaN)
+            ip_new_start=n_active+1
+            ip_new_end=n_active+deltaN
+            do ip=ip_new_start,ip_new_end
+                call injection_inlet_sub(ip)
+            enddo
+            n_active=ip_new_end
+            np_e=n_active
+            n_injected_total=n_injected_total+deltaN
+        endif
+
+        if(i_step>n_inject_steps .and. n_injected_total>0)then
+            if(real(n_lost_total,8)>=0.8d0*real(n_injected_total,8))exit
+        endif
 
         call find_x_to_grid
         expt=exp(-i*2*pi*frequency*t)
@@ -914,23 +937,139 @@ subroutine play_trajectory
             dW_Erf=qi*sum(Erf_play*v(ip,1:3))*dt
             dW_Es=qi*sum(Es_play*v(ip,1:3))*dt
 
-            write(46,300)i_step,ip,t,x(ip,1:3),v(ip,1:3),vl,vpr,vph, &
+            write(46,300)i_step,particle_id(ip),t,x(ip,1:3),v(ip,1:3),vl,vpr,vph, &
                 B_play,Erf_play,Es_play,force_lorentz,force_total, &
                 dW_Erf,dW_Es,dW_Erf+dW_Es
 
             call push_RK4(B_play,E_total)
         enddo
+
+        if(i_step>=n_inject_steps .and. n_active<=0)exit
     enddo
 
     close(46)
     t=t_save
+    state_power_on_off=state_power_save
 end subroutine play_trajectory
+
+subroutine escape_play_particles(n_lost_play)
+    USE the_whole_varibles
+    implicit none
+    integer*4 :: n_lost_play
+    real*8 :: rtp,ztp,vtp2,v2_lim
+    logical :: lost
+
+    v2_lim=(0.1d0*c)**2
+    n_lost_play=0
+    ip=1
+    do while(ip<=n_active)
+        rtp=sqrt(x(ip,1)**2+x(ip,2)**2)
+        ztp=x(ip,3)
+        vtp2=v(ip,1)**2+v(ip,2)**2+v(ip,3)**2
+        lost=.false.
+
+        if(ztp<=zs)then
+            lost=.true.
+        elseif(ztp>=zd)then
+            lost=.true.
+        elseif(rtp>=rp .and. (ztp>zs .or. ztp<zd))then
+            lost=.true.
+        elseif(isnan(x(ip,1)) .or. isnan(x(ip,2)) .or. isnan(x(ip,3)) .or. &
+            & isnan(v(ip,1)) .or. isnan(v(ip,2)) .or. isnan(v(ip,3)) .or. vtp2>v2_lim)then
+            lost=.true.
+        endif
+
+        if(lost)then
+            n_lost_play=n_lost_play+1
+            call remove_particle(ip)
+        else
+            ip=ip+1
+        endif
+    enddo
+    np_e=n_active
+end subroutine escape_play_particles
+
+subroutine make_replay_path(dir_name,file_name,fullpath)
+    implicit none
+    character(len=*), intent(in) :: dir_name,file_name
+    character(len=*), intent(out) :: fullpath
+    integer :: len_dir
+    character(len=1) :: last_char
+
+    fullpath=trim(dir_name)
+    len_dir=len_trim(fullpath)
+    if(len_dir<=0)then
+        fullpath=trim(file_name)
+        return
+    endif
+
+    last_char=fullpath(len_dir:len_dir)
+    if(last_char=='/' .or. last_char=='\')then
+        fullpath=trim(fullpath)//trim(file_name)
+    else
+        fullpath=trim(fullpath)//'/'//trim(file_name)
+    endif
+end subroutine make_replay_path
+
+subroutine record_replay_fields
+    USE the_whole_varibles
+    implicit none
+    integer :: unit_replay,iostat_replay
+    character*256 :: fullpath
+
+    call make_replay_path(replayFieldDir,'replay_field.bin',fullpath)
+    open(newunit=unit_replay,file=fullpath,status='replace',access='stream', &
+        form='unformatted',iostat=iostat_replay)
+    if(iostat_replay/=0)return
+
+    write(unit_replay)nr,nz,m_start,m_end,m_delta,iswitch_RF2
+    write(unit_replay)frequency,frequency2,state_power_on_off
+    write(unit_replay)b0_DC
+    write(unit_replay)Es_2D
+    write(unit_replay)e_output
+    write(unit_replay)Erf6
+    close(unit_replay)
+end subroutine record_replay_fields
+
+subroutine load_replay_fields
+    USE the_whole_varibles
+    implicit none
+    integer :: unit_replay,iostat_replay
+    integer :: nr_file,nz_file,m_start_file,m_end_file,m_delta_file,iswitch_RF2_file
+    real*8 :: frequency_file,frequency2_file,state_power_file
+    character*256 :: fullpath
+
+    call make_replay_path(replayFieldDir,'replay_field.bin',fullpath)
+    open(newunit=unit_replay,file=fullpath,status='old',access='stream', &
+        form='unformatted',iostat=iostat_replay)
+    if(iostat_replay/=0)then
+        write(*,*)'Cannot open frozen replay field file: ',trim(fullpath)
+        stop
+    endif
+
+    read(unit_replay)nr_file,nz_file,m_start_file,m_end_file,m_delta_file,iswitch_RF2_file
+    if(nr_file/=nr .or. nz_file/=nz .or. m_start_file/=m_start .or. &
+        & m_end_file/=m_end .or. m_delta_file/=m_delta)then
+        write(*,*)'Frozen replay field grid/mode shape mismatch: ',trim(fullpath)
+        stop
+    endif
+
+    read(unit_replay)frequency_file,frequency2_file,state_power_file
+    frequency=frequency_file
+    state_power_on_off=state_power_file
+    iswitch_RF2=iswitch_RF2_file
+    read(unit_replay)b0_DC
+    read(unit_replay)Es_2D
+    read(unit_replay)e_output
+    read(unit_replay)Erf6
+    close(unit_replay)
+end subroutine load_replay_fields
 
 subroutine ensure_particle_capacity(required_capacity)
     USE the_whole_varibles
     implicit none
     integer*4 :: required_capacity, new_capacity
-    integer, allocatable :: np_tmp(:), ir_tmp(:,:)
+    integer, allocatable :: np_tmp(:), ir_tmp(:,:), id_tmp(:)
     real*8, allocatable :: x_tmp(:,:), v_tmp(:,:), v_e_tmp(:,:), t_tmp(:), xg_tmp(:,:), life_tmp(:,:)
 
     if(required_capacity<=n_capacity)return
@@ -938,6 +1077,7 @@ subroutine ensure_particle_capacity(required_capacity)
     new_capacity=max(required_capacity,n_capacity+max(deltaN,1)*100)
 
     allocate(np_tmp(1:new_capacity))
+    allocate(id_tmp(1:new_capacity))
     allocate(ir_tmp(1:new_capacity,1:2))
     allocate(x_tmp(1:new_capacity,1:3))
     allocate(v_tmp(1:new_capacity,1:3))
@@ -947,6 +1087,7 @@ subroutine ensure_particle_capacity(required_capacity)
     allocate(life_tmp(1:new_capacity,1:2))
 
     np_tmp=0
+    id_tmp=0
     ir_tmp=0
     x_tmp=0.0d0
     v_tmp=0.0d0
@@ -956,6 +1097,7 @@ subroutine ensure_particle_capacity(required_capacity)
     life_tmp=0.0d0
 
     np_tmp(1:n_active)=np(1:n_active)
+    id_tmp(1:n_active)=particle_id(1:n_active)
     ir_tmp(1:n_active,1:2)=ir1_iz1_grid(1:n_active,1:2)
     x_tmp(1:n_active,1:3)=x(1:n_active,1:3)
     v_tmp(1:n_active,1:3)=v(1:n_active,1:3)
@@ -964,8 +1106,9 @@ subroutine ensure_particle_capacity(required_capacity)
     xg_tmp(1:n_active,1:2)=x_to_grid(1:n_active,1:2)
     life_tmp(1:n_active,1:2)=life_and_ek(1:n_active,1:2)
 
-    deallocate(np,ir1_iz1_grid,x,v,v_e,t_np,x_to_grid,life_and_ek)
+    deallocate(np,particle_id,ir1_iz1_grid,x,v,v_e,t_np,x_to_grid,life_and_ek)
     allocate(np(1:new_capacity))
+    allocate(particle_id(1:new_capacity))
     allocate(ir1_iz1_grid(1:new_capacity,1:2))
     allocate(x(1:new_capacity,1:3))
     allocate(v(1:new_capacity,1:3))
@@ -975,6 +1118,7 @@ subroutine ensure_particle_capacity(required_capacity)
     allocate(life_and_ek(1:new_capacity,1:2))
 
     np=np_tmp
+    particle_id=id_tmp
     ir1_iz1_grid=ir_tmp
     x=x_tmp
     v=v_tmp

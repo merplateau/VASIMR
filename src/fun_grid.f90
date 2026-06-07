@@ -209,9 +209,11 @@ subroutine grid_ini
     allocate (jp_m(1:nr,1:nz,1:n3),jp_record(1:nr,1:nth,1:nz,1:n3),jp_AC(1:nr,1:nth,1:nz,1:n3))
     allocate (b_m(1:nr,1:nz,1:n3),b_record(1:nr,1:nth,1:nz,1:n3),b_AC(1:nr,1:nth,1:nz,1:n3))
     allocate (ep(1:nr,1:nz,1:9), si(1:nr,1:nz,1:n3,1:n3))
+    allocate (si_species(1:nr,1:nz,1:2,1:n3,1:n3))
     allocate(A_helicon.col(1:30*nr*nz),A_helicon.row(1:30*nr*nz),A_helicon.val(1:30*nr*nz))
     allocate (eq_b(1:3*nr*nz),eq_xlast(m_start:m_end,1:3*nr*nz))
     allocate(power_depo_2D(1:nr,1:nz),ptotm(1:nr,1:nz,1:n3),power_depo_rthz(1:nr,1:nz,1:n3))
+    allocate(power_depo_species_m(1:nr,1:nz,1:2,m_start:m_end))
     allocate(e_output(m_start:m_end,1:nr,1:nz,1:n3),Xkz_e(m_start:m_end,-(nz-1)/2:(nz-1)/2,1:n3)) 
     allocate(ptotal_m(m_start:m_end),max_eth(m_start:m_end))
     allocate(pdf_ne_r(1:nr),pdf_ne_source_r(1:nrp),pdf_ne_z(1:nz),pdf_ne_source_z(1:nz))
@@ -223,6 +225,8 @@ subroutine grid_ini
     ni=0.;e_int=0.;Q_ie=0;
     e_AC=0.0D0; b_AC=0.0D0; jp_AC=0.0D0;
     ptotm=0.0D0;power_depo_rthz=0.
+    si_species=0.0D0*i
+    power_depo_species_m=0.0D0
     fvm=0.0D0
     Xkz_e=0.0D0+0.0*i
 

@@ -365,6 +365,7 @@ subroutine record_profiles
         if (rec_Erf_all_m == 1) call record_profile_Erf_all_m
         if (rec_xv_loss == 1) call record_profile_xv_loss
         if (rec_dielectric_stat == 1) call record_profile_dielectric_stat
+        if (rec_deposition == 1) call record_profile_deposition
 
         ! call rec_para
         ! I dont think repeating rec_par makes sense
@@ -564,6 +565,27 @@ subroutine record_profile_dielectric_stat
     enddo
     close(27)
 end subroutine record_profile_dielectric_stat
+
+subroutine record_profile_deposition
+    USE the_whole_varibles
+    implicit none
+    character*30 fname
+    character*256 fullpath
+    integer*4 :: i_species,m_rec
+
+300 format(<nr>(e12.5,' '))
+128 format('deposition_',i0,'.dat')
+
+    write (fname,128)ifig
+    fullpath=trim(outputDir)//trim(fname)
+    open (unit=28,file=fullpath,status='unknown',iostat=ierror)
+    do i_species=1,2
+        do m_rec=m_start,m_end
+            write (28,300)power_depo_species_m(:,:,i_species,m_rec)
+        enddo
+    enddo
+    close(28)
+end subroutine record_profile_deposition
 
 subroutine record_dev_FDFD
     use the_whole_varibles

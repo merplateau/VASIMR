@@ -68,12 +68,14 @@ module the_whole_varibles
     real*8, external :: DBesselJZero
     real*8, allocatable :: ni(:,:),b0_DC(:,:,:),te_in_FDFD(:,:)
     real*8, allocatable ::fvm(:,:),ptotm(:,:,:),power_depo_rthz(:,:,:),th(:),ptotal_m(:),max_eth(:)
+    real*8, allocatable :: power_depo_species_m(:,:,:,:)
     complex*16:: im,imp,iom,m_max
     complex*16, allocatable ::eq_b(:),eq_xlast(:,:),ja_m_nor(:,:,:), ja_record(:,:,:,:),ja_AC(:,:,:,:)
     complex*16, allocatable :: e_m(:,:,:),e_record(:,:,:,:),e_AC(:,:,:,:),e_int(:,:,:)
     complex*16, allocatable :: jp_m(:,:,:), jp_record(:,:,:,:),jp_AC(:,:,:,:)
     complex*16, allocatable :: b_m(:,:,:), b_record(:,:,:,:),b_AC(:,:,:,:)
     complex*16, allocatable ::ep(:,:,:),si(:,:,:,:),power_depo_2D(:,:), Xkz_e(:,:,:)
+    complex*16, allocatable :: si_species(:,:,:,:,:)
     Complex*16, allocatable :: e_output(:,:,:,:),Erf6(:,:,:)
 
     !initial
@@ -211,6 +213,7 @@ module the_whole_varibles
     integer*4 :: rec_density_Es_2D
     integer*4 :: rec_Erf_all_m
     integer*4 :: rec_dielectric_stat
+    integer*4 :: rec_deposition
 
 
     !integer*4 :: recDensity

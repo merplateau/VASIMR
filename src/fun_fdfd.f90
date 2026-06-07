@@ -157,6 +157,8 @@ subroutine find_Dielectric_tensor
     Complex*16 :: omce,omci,qim,qem !Defined and just used in find_Dielectric_tensor,mei
     Complex*16 :: ompi2,ompe2,omci2,omce2 !Defined and just used in find_Dielectric_tensor
     Complex*16 K_perp,K_phi,K_ll,coeff_ve_om,coeff_vi_om
+    Complex*16 :: omega_d
+    Complex*16 :: K_perp_i,K_phi_i,K_ll_i,K_perp_e,K_phi_e,K_ll_e
     real*8     b0r,b0z,b0_abs,b02,om2,ve,vi,coeff_ompi2,coeff_ompe2
     !--------------------------coefficient--------------------------!
 
@@ -176,6 +178,7 @@ subroutine find_Dielectric_tensor
 
     ep=0.0D0*i
     si=0.0D0*i
+    si_species=0.0D0*i
     ep(:,:,1)=1.0D0+0.0D0*i
     ep(:,:,5)=1.0D0+0.0D0*i
     ep(:,:,9)=1.0D0+0.0D0*i
@@ -339,6 +342,36 @@ subroutine find_Dielectric_tensor
                 K_ll=K_ll+1-ompe2/om2;
             endif
 
+            K_perp_i=0.0D0*i; K_phi_i=0.0D0*i; K_ll_i=0.0D0*i
+            K_perp_e=0.0D0*i; K_phi_e=0.0D0*i; K_ll_e=0.0D0*i
+            if(iswitch_dielectric==3)then
+                K_perp_i=ompi2/(2.0D0*om)*(Ak(1,1)+Ak(3,1))
+                K_phi_i=ompi2/(2.0D0*om)*(Ak(1,1)-Ak(3,1))
+                K_ll_i=2.0D0*ompi2/(kap_ll*2.0D0*qi*tpp(2,1)/mi)*(vl/om+Bk(1))
+                omega_d=om-kap_ll*vl
+                K_perp_e=-ompe2/om2*omega_d**2/(omega_d**2-omce2)
+                K_phi_e=-ompe2*omce/om2*omega_d/(omega_d**2-omce2)
+                K_ll_e=-ompe2/(om*omega_d)
+            elseif(iswitch_dielectric==4)then
+                K_perp_i=ompi2/(2.0D0*om)*(Ak(1,1)+Ak(3,1))
+                K_phi_i=ompi2/(2.0D0*om)*(Ak(1,1)-Ak(3,1))
+                K_ll_i=2.0D0*ompi2/(kap_ll*2.0D0*qi*tpp(2,1)/mi)*(vl/om+Bk(1))
+                K_perp_e=ompe2/(2.0D0*om)*(Ak(1,2)+Ak(3,2))
+                K_phi_e=ompe2/(2.0D0*om)*(Ak(1,2)-Ak(3,2))
+                K_ll_e=2.0D0*ompe2/(kap_ll*2.0D0*qe_abs*tpp(2,2)/me)*(vl/om+Bk(2))
+            else
+                if(iswitch_dielectric==1)then
+                    K_perp_i=-ompi2/(om2-omci2)
+                    K_phi_i=ompi2*omci/(om*(om2-omci2))
+                    K_ll_i=-ompi2/om2
+                endif
+                K_perp_e=-ompe2/(om2-omce2)
+                K_phi_e=-ompe2*omce/(om*(om2-omce2))
+                K_ll_e=-ompe2/om2
+            endif
+            call set_species_si(1,K_perp_i,K_phi_i,K_ll_i)
+            call set_species_si(2,K_perp_e,K_phi_e,K_ll_e)
+
 
             si(ir,iz,1,1)=b0z**2/b02*K_perp+b0r**2/b02*K_ll-1.0D0
             si(ir,iz,1,2)=-b0z/b0_abs*i*K_phi
@@ -352,12 +385,16 @@ subroutine find_Dielectric_tensor
         enddo
     enddo
     si=-si*i*epson0*om
+    si_species=-si_species*i*epson0*om
 
 
     si(nrp,:,1,:)=0.0D0*i
+    si_species(nrp,:,:,1,:)=0.0D0*i
 
     if (iswitch_vacum_dielectric_type == 1) si(nrp+1:nr,:,:,:)=0.0D0*i
     if (iswitch_vacum_dielectric_type == 11) si(:,:,:,:)=0.0D0*i
+    if (iswitch_vacum_dielectric_type == 1) si_species(nrp+1:nr,:,:,:,:)=0.0D0*i
+    if (iswitch_vacum_dielectric_type == 11) si_species(:,:,:,:,:)=0.0D0*i
 
     ep(:,:,1)=1.0D0+i/(epson0*om)*si(:,:,1,1)
     ep(:,:,5)=1.0D0+i/(epson0*om)*si(:,:,2,2)
@@ -373,6 +410,22 @@ subroutine find_Dielectric_tensor
         ni=ni_midVal
     end if
     continue
+contains
+    subroutine set_species_si(i_species,K_perp_s,K_phi_s,K_ll_s)
+        implicit none
+        integer*4 :: i_species
+        Complex*16 :: K_perp_s,K_phi_s,K_ll_s
+
+        si_species(ir,iz,i_species,1,1)=b0z**2/b02*K_perp_s+b0r**2/b02*K_ll_s
+        si_species(ir,iz,i_species,1,2)=-b0z/b0_abs*i*K_phi_s
+        si_species(ir,iz,i_species,1,3)=b0r*b0z/b02*(K_ll_s-K_perp_s)
+        si_species(ir,iz,i_species,2,2)=K_perp_s
+        si_species(ir,iz,i_species,2,3)=-b0r/b0_abs*i*K_phi_s
+        si_species(ir,iz,i_species,3,3)=b0z**2/b02*K_ll_s+b0r**2/b02*K_perp_s
+        si_species(ir,iz,i_species,2,1)=b0z/b0_abs*i*K_phi_s
+        si_species(ir,iz,i_species,3,1)=si_species(ir,iz,i_species,1,3)
+        si_species(ir,iz,i_species,3,2)=b0r/b0_abs*i*K_phi_s
+    end subroutine set_species_si
 end subroutine find_Dielectric_tensor
 
 subroutine set_0
@@ -384,6 +437,7 @@ subroutine set_0
     !ptotal_BI=0.0D0
     power_depo_2D=0.0D0*i
     power_depo_rthz=0.
+    power_depo_species_m=0.0D0
     ptotm=0.0D0
     A_helicon.col=0
     A_helicon.row=0
@@ -1063,7 +1117,7 @@ end subroutine findjp
 subroutine ptotalsolve
     use the_whole_varibles
     implicit none
-    integer*4 :: ndirec1,ndirec2,n_boundary
+    integer*4 :: ndirec1,ndirec2,n_boundary,i_species
     real*8 :: ave_p,ptotal_pt
     complex*16 :: power_mode_2D(nr,nz)     ! 本 m 这一份的 2D 沉积，只用于 ptotal 积分
     n_boundary=nint(0.8*nrp)
@@ -1076,6 +1130,17 @@ subroutine ptotalsolve
             power_mode_2D(:,:)=power_mode_2D(:,:)+ave_p*2.0D0*pi*(si(:,:,ndirec2,ndirec1)*e_int(:,:,ndirec1)*DCONJG(e_int(:,:,ndirec2)))
         end do
     end do
+    if(m>=m_start .and. m<=m_end)then
+        do i_species=1,2
+            do ndirec1=1,3
+                do ndirec2=1,3
+                    power_depo_species_m(:,:,i_species,m)=power_depo_species_m(:,:,i_species,m) &
+                        + ave_p*2.0D0*pi*(si_species(:,:,i_species,ndirec2,ndirec1) &
+                        * e_int(:,:,ndirec1)*DCONJG(e_int(:,:,ndirec2)))
+                end do
+            end do
+        end do
+    endif
 
     power_depo_2D(:,:)=power_depo_rthz(:,:,1)+power_depo_rthz(:,:,2)+power_depo_rthz(:,:,3)
 

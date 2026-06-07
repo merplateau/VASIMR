@@ -120,6 +120,9 @@ module the_whole_varibles
     real*8 :: ISP_global=0.0d0, ISP_plume=0.0d0
     real*8 :: perf_exit_momentum_z=0.0d0, perf_inject_momentum_z=0.0d0
     real*8 :: perf_exit_count=0.0d0, perf_inject_count=0.0d0, perf_t0=0.0d0
+    real*8 :: loading_stability_data(1:3,1:20)=0.0d0
+    real*8 :: loading_cv_percent=0.0d0, loading_s_percent=0.0d0
+    integer*4 :: loading_stability_count=0
 
     !particles
     integer*4,parameter:: iseed=1234567,nrec_t=42,nrec_p=20,te_update_interval=1000
@@ -191,6 +194,7 @@ module the_whole_varibles
     real*8 :: vl_in_FDFD, alpha_v
 
     integer*4 :: iswitch_log
+    integer*4 :: iswitch_play_trajectory
 
     integer*4 :: dev_Only4CalMag
 
@@ -297,5 +301,6 @@ Program hypic
     close(42)
     close(43)
     call display_main
+    if(iswitch_play_trajectory==1) call play_trajectory
     write(*,*) 'code running has finished !!! '
 End Program hypic

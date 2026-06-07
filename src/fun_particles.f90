@@ -340,6 +340,72 @@ subroutine interpolation_E_B(B_mover,E_mover)
     E_mover(3)=erthz(3)
 end subroutine interpolation_E_B
 
+subroutine interpolation_play_fields(B_mover,Erf_cart,Es_cart)
+    USE the_whole_varibles
+    implicit none
+    INTEGER:: ir1,ir2,iz1,iz2,m_play
+    real*8::sinth,costh,xtp,ytp,rtp,th_tp
+    complex*16::c1_6(1:6),Em_tp(1:3)
+    complex*16::phase_factor
+    real*8:: B_mover(1:3),Erf_cart(1:3),Es_cart(1:3)
+    Real*8::s1,s2,s3,s4
+    Real*8::br,bz
+    Real*8::Es_cyl(1:3),Erf_cyl(1:3)
+
+    B_mover=0.0d0
+    Erf_cart=0.0d0
+    Es_cart=0.0d0
+    Es_cyl=0.0d0
+    Erf_cyl=0.0d0
+
+    rtp=sqrt(x(ip,1)**2+x(ip,2)**2)+1e-20
+    xtp=x(ip,1)
+    ytp=x(ip,2)
+    sinth=ytp/rtp
+    costh=xtp/rtp
+
+    s1=x_to_grid(ip,1)*x_to_grid(ip,2)
+    s2=x_to_grid(ip,1)*(1.0d0-x_to_grid(ip,2))
+    s3=(1.0d0-x_to_grid(ip,1))*(1.0d0-x_to_grid(ip,2))
+    s4=(1.0d0-x_to_grid(ip,1))*x_to_grid(ip,2)
+
+    ir1=ir1_iz1_grid(ip,1)
+    iz1=ir1_iz1_grid(ip,2)
+    ir2=ir1+1
+    iz2=iz1+1
+    if(ir1<1 .or. ir2>nr .or. iz1<1 .or. iz2>nz)return
+
+    br=s3*b0_DC(ir1,iz1,1)+s1*b0_DC(ir2,iz2,1)+s2*b0_DC(ir2,iz1,1)+s4*b0_DC(ir1,iz2,1)
+    bz=s3*b0_DC(ir1,iz1,3)+s1*b0_DC(ir2,iz2,3)+s2*b0_DC(ir2,iz1,3)+s4*b0_DC(ir1,iz2,3)
+    B_mover(1)=br*costh
+    B_mover(2)=br*sinth
+    B_mover(3)=bz
+
+    Es_cyl(1)=s3*Es_2D(ir1,iz1,1)+s1*Es_2D(ir2,iz2,1)+s2*Es_2D(ir2,iz1,1)+s4*Es_2D(ir1,iz2,1)
+    Es_cyl(3)=s3*Es_2D(ir1,iz1,2)+s1*Es_2D(ir2,iz2,2)+s2*Es_2D(ir2,iz1,2)+s4*Es_2D(ir1,iz2,2)
+
+    c1_6=(0.0d0,0.0d0)
+    th_tp=atan2(ytp,xtp)
+    do m_play=m_start,m_end
+        Em_tp=s3*e_output(m_play,ir1,iz1,:)+s1*e_output(m_play,ir2,iz2,:) &
+            + s2*e_output(m_play,ir2,iz1,:)+s4*e_output(m_play,ir1,iz2,:)
+        phase_factor=exp(cmplx(0.0d0,1.0d0)*m_play*th_tp)
+        c1_6(1:3)=c1_6(1:3)+Em_tp*phase_factor
+    enddo
+    if(iswitch_RF2==1)then
+        c1_6(4:6)=s3*Erf6(ir1,iz1,4:6)+s1*Erf6(ir2,iz2,4:6) &
+            + s2*Erf6(ir2,iz1,4:6)+s4*Erf6(ir1,iz2,4:6)
+    endif
+    Erf_cyl(1:3)=state_power_on_off*(real(expt*c1_6(1:3))+real(expt2*c1_6(4:6)))
+
+    Es_cart(1)=Es_cyl(1)*costh-Es_cyl(2)*sinth
+    Es_cart(2)=Es_cyl(1)*sinth+Es_cyl(2)*costh
+    Es_cart(3)=Es_cyl(3)
+    Erf_cart(1)=Erf_cyl(1)*costh-Erf_cyl(2)*sinth
+    Erf_cart(2)=Erf_cyl(1)*sinth+Erf_cyl(2)*costh
+    Erf_cart(3)=Erf_cyl(3)
+end subroutine interpolation_play_fields
+
 subroutine push_RK4(B_mover,E_mover)
     USE the_whole_varibles
     implicit none
@@ -781,6 +847,84 @@ subroutine update_performance_period
     perf_inject_count=0.0d0
     perf_t0=t
 end subroutine update_performance_period
+
+subroutine play_trajectory
+    USE the_whole_varibles
+    implicit none
+    integer*4 :: n_steps,i_step,ip_new_start,ip_new_end,play_required
+    integer*4 :: ierror_play
+    real*8 :: t_save,t_play0,rtp,costh,sinth,vr,vph,br,bz,bb,vl,vpr
+    real*8 :: B_play(1:3),Erf_play(1:3),Es_play(1:3),E_total(1:3)
+    real*8 :: v_cross_b(1:3),force_lorentz(1:3),force_total(1:3)
+    real*8 :: dW_Erf,dW_Es
+    character*256 :: fullpath
+
+300 format(i8,1x,i10,28(1x,e14.7))
+
+    n_steps=max(1,nint(trf/dt))
+    play_required=max(deltaN*n_steps,1)
+    call ensure_particle_capacity(play_required)
+
+    fullpath=trim(outputDir)//trim('1play_trajectory.dat')
+    open(unit=46,file=fullpath,status='replace',iostat=ierror_play)
+    if(ierror_play/=0)return
+    write(46,'(a)') '# step id t x y z vx vy vz vl vpr vph Bx By Bz ' // &
+        'Erfx Erfy Erfz Esx Esy Esz FLx FLy FLz FTx FTy FTz WErf WEs Wtot'
+
+    t_save=t
+    t_play0=t
+    n_active=0
+    np_e=0
+
+    do i_step=1,n_steps
+        t=t_play0+real(i_step-1,8)*dt
+        ip_new_start=n_active+1
+        ip_new_end=n_active+deltaN
+        do ip=ip_new_start,ip_new_end
+            call injection_inlet_sub(ip)
+        enddo
+        n_active=ip_new_end
+        np_e=n_active
+
+        call find_x_to_grid
+        expt=exp(-i*2*pi*frequency*t)
+        expt2=exp(-i*2*pi*frequency2*t)
+
+        do ip=1,n_active
+            call interpolation_play_fields(B_play,Erf_play,Es_play)
+            E_total=Erf_play+Es_play
+
+            rtp=sqrt(x(ip,1)**2+x(ip,2)**2)+1.0d-20
+            costh=x(ip,1)/rtp
+            sinth=x(ip,2)/rtp
+            vr=v(ip,1)*costh+v(ip,2)*sinth
+            vph=-v(ip,1)*sinth+v(ip,2)*costh
+            br=B_play(1)*costh+B_play(2)*sinth
+            bz=B_play(3)
+            bb=max(sqrt(br**2+bz**2),1.0d-20)
+            vl=vr*br/bb+v(ip,3)*bz/bb
+            vpr=vr*bz/bb-v(ip,3)*br/bb
+
+            v_cross_b(1)=v(ip,2)*B_play(3)-v(ip,3)*B_play(2)
+            v_cross_b(2)=v(ip,3)*B_play(1)-v(ip,1)*B_play(3)
+            v_cross_b(3)=v(ip,1)*B_play(2)-v(ip,2)*B_play(1)
+            force_lorentz=qi*v_cross_b
+            force_total=qi*(E_total+v_cross_b)
+
+            dW_Erf=qi*sum(Erf_play*v(ip,1:3))*dt
+            dW_Es=qi*sum(Es_play*v(ip,1:3))*dt
+
+            write(46,300)i_step,ip,t,x(ip,1:3),v(ip,1:3),vl,vpr,vph, &
+                B_play,Erf_play,Es_play,force_lorentz,force_total, &
+                dW_Erf,dW_Es,dW_Erf+dW_Es
+
+            call push_RK4(B_play,E_total)
+        enddo
+    enddo
+
+    close(46)
+    t=t_save
+end subroutine play_trajectory
 
 subroutine ensure_particle_capacity(required_capacity)
     USE the_whole_varibles

@@ -41,7 +41,8 @@ subroutine initialize
         & b0Dir, &
         & kapDir, &
         & plasmaLoadDir, &
-        & iswitch_log
+        & iswitch_log, &
+        & iswitch_play_trajectory
 
     namelist /injectionConfig/ &
         & n0_set, &
@@ -68,6 +69,7 @@ subroutine initialize
     TminLim=3.0d0
     width_ne_r=0.005d0
     export_real_B0=0
+    iswitch_play_trajectory=0
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=ini)
@@ -643,6 +645,10 @@ subroutine power_ini
     perf_exit_count = 0.0d0
     perf_inject_count = 0.0d0
     perf_t0 = t
+    loading_stability_data(:,1:20)=0.0d0
+    loading_cv_percent=0.0d0
+    loading_s_percent=0.0d0
+    loading_stability_count=0
 end subroutine power_ini
 
 subroutine configure_variable_particles

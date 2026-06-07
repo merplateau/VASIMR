@@ -125,7 +125,7 @@ subroutine display_main
         
         else if (iswitch_log == 1) then
             if (.not. first_log_display) then
-                write(*,'(a)',advance='no') esc//'[8A'
+                write(*,'(a)',advance='no') esc//'[9A'
             endif
             
             write(*, "(a,'------------------------------------------------------------------------')") esc//'[2K'
@@ -143,6 +143,8 @@ subroutine display_main
                 esc//'[2K', ISP_global, ISP_plume
             write(*, "(a,'n_active = ', I0)") &
                 esc//'[2K', n_active
+            write(*, "(a,'CV, S = ', I0, '%, ', I0, '%')") &
+                esc//'[2K', nint(loading_cv_percent), nint(loading_s_percent)
 
             first_log_display=.false.
             
@@ -173,6 +175,7 @@ subroutine record_loading_history(event_type)
 
     absorbed_loading=2.0d0*absorbed_power/(irf_set**2)*1.0d3
     deposited_loading=2.0d0*ptotal/(irf_set**2)*1.0d3
+    call update_loading_stability(absorbed_loading,deposited_loading,Ek_total_current_joules)
 
 300 format(i4,1x,e14.7,1x,i12,3(1x,e14.7))
     open(unit=44,file=trim(outputDir)//trim('1loading_history.dat'), &
@@ -181,6 +184,64 @@ subroutine record_loading_history(event_type)
     write(44,300)event_type,t,it,absorbed_loading,deposited_loading,Ek_total_current_joules
     close(44)
 end subroutine record_loading_history
+
+
+subroutine update_loading_stability(absorbed_loading,deposited_loading,ek_total)
+    USE the_whole_varibles
+    implicit none
+    integer*4 :: n_hist,i_comp,i_hist
+    real*8 :: absorbed_loading,deposited_loading,ek_total
+    real*8 :: values(1:3),mean_x,std_x,cv_x,s_x
+    real*8 :: sum_i,sum_i2,sum_x,sum_ix,denom,a_fit
+
+    values(1)=absorbed_loading
+    values(2)=deposited_loading
+    values(3)=ek_total
+
+    if(loading_stability_count<20)then
+        loading_stability_count=loading_stability_count+1
+    else
+        loading_stability_data(:,1:19)=loading_stability_data(:,2:20)
+    endif
+    loading_stability_data(:,loading_stability_count)=values
+
+    n_hist=loading_stability_count
+    loading_cv_percent=0.0d0
+    loading_s_percent=0.0d0
+    if(n_hist<2)return
+
+    sum_i=0.0d0
+    sum_i2=0.0d0
+    do i_hist=1,n_hist
+        sum_i=sum_i+real(i_hist,8)
+        sum_i2=sum_i2+real(i_hist*i_hist,8)
+    enddo
+    denom=real(n_hist,8)*sum_i2-sum_i*sum_i
+
+    do i_comp=1,3
+        sum_x=sum(loading_stability_data(i_comp,1:n_hist))
+        mean_x=sum_x/real(n_hist,8)
+        std_x=sqrt(sum((loading_stability_data(i_comp,1:n_hist)-mean_x)**2)/real(n_hist,8))
+        if(abs(mean_x)>1.0d-300)then
+            cv_x=std_x/abs(mean_x)
+        else
+            cv_x=0.0d0
+        endif
+        loading_cv_percent=max(loading_cv_percent,100.0d0*cv_x)
+
+        sum_ix=0.0d0
+        do i_hist=1,n_hist
+            sum_ix=sum_ix+real(i_hist,8)*loading_stability_data(i_comp,i_hist)
+        enddo
+        if(denom>0.0d0 .and. abs(mean_x)>1.0d-300)then
+            a_fit=(real(n_hist,8)*sum_ix-sum_i*sum_x)/denom
+            s_x=abs(a_fit)*real(n_hist-1,8)/abs(mean_x)
+        else
+            s_x=0.0d0
+        endif
+        loading_s_percent=max(loading_s_percent,100.0d0*s_x)
+    enddo
+end subroutine update_loading_stability
 
 
 subroutine record_performance_history

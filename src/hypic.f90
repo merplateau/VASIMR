@@ -287,7 +287,6 @@ Program hypic
 
     close(42)
     close(43)
-    if(iswitch_log==1)close(44)
     call display_main
     write(*,*) 'code running has finished !!! '
 End Program hypic

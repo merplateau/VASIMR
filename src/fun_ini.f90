@@ -291,7 +291,8 @@ subroutine initialize
     open (unit=42,file=trim(outputDir)//trim('1time_average.dat'),status='unknown',iostat=ierror)
     open (unit=43,file=trim(outputDir)//trim('1time_trajectory.dat'),status='unknown',iostat=ierror)
     if(iswitch_log==1)then
-        open (unit=44,file=trim(outputDir)//trim('1loading_history.dat'),status='unknown',iostat=ierror)
+        open (unit=44,file=trim(outputDir)//trim('1loading_history.dat'),status='replace',iostat=ierror)
+        close(44)
     endif
 
     if (iswitch_analytic_profile == 1 .or. iswitch_analytic_profile == 2) then

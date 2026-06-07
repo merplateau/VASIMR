@@ -154,6 +154,7 @@ subroutine record_loading_history(event_type)
     implicit none
     integer*4 :: event_type
     integer*4 :: ip_rec
+    integer*4 :: ierror_log
     real*8 :: absorbed_loading, deposited_loading
     real*8 :: Ek_i_total, Ek_e_total
 
@@ -170,7 +171,11 @@ subroutine record_loading_history(event_type)
     deposited_loading=2.0d0*ptotal/(irf_set**2)*1.0d3
 
 300 format(i4,1x,e14.7,1x,i12,3(1x,e14.7))
+    open(unit=44,file=trim(outputDir)//trim('1loading_history.dat'), &
+        status='unknown',position='append',iostat=ierror_log)
+    if(ierror_log/=0)return
     write(44,300)event_type,t,it,absorbed_loading,deposited_loading,Ek_total_current_joules
+    close(44)
 end subroutine record_loading_history
 
 

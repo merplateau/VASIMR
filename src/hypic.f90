@@ -210,6 +210,7 @@ module the_whole_varibles
     integer*4 :: rec_ions_rz
     integer*4 :: rec_density_Es_2D
     integer*4 :: rec_Erf_all_m
+    integer*4 :: rec_dielectric_stat
 
 
     !integer*4 :: recDensity
@@ -228,6 +229,7 @@ module the_whole_varibles
     integer*4 :: iswitch_vacum_dielectric_type
     
     real*8,allocatable :: nu_depo(:,:,:), u2_depo(:,:,:), t_depo(:,:,:), n_depo(:,:), vl_closure_prev(:,:)
+    real*8,allocatable :: nu_depo_in_FDFD(:,:,:), t_in_dielectric(:,:,:)
     integer*4 :: statistic_trigger=0, statistic_acc_number=0, statistic_ready=0
 end module the_whole_varibles
 

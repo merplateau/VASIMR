@@ -236,10 +236,13 @@ subroutine grid_ini
     ! change
 
     allocate (nu_depo(1:nr,1:nz,1:7), u2_depo(1:nr,1:nz,1:2), t_depo(1:nr,1:nz,1:2), n_depo(1:nr,1:nz))
+    allocate (nu_depo_in_FDFD(1:nr,1:nz,1:7), t_in_dielectric(1:nr,1:nz,1:4))
     allocate (vl_closure_prev(1:nr,1:nz))
     nu_depo=0.0d0
     u2_depo=0.0d0
     t_depo=0.0d0
     n_depo=0.0d0
+    nu_depo_in_FDFD=0.0d0
+    t_in_dielectric=0.0d0
     vl_closure_prev=vz0
 end subroutine grid_ini

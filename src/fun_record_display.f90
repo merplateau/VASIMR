@@ -364,6 +364,7 @@ subroutine record_profiles
         if (rec_density_Es_2D == 1) call record_profile_density_Es_2D
         if (rec_Erf_all_m == 1) call record_profile_Erf_all_m
         if (rec_xv_loss == 1) call record_profile_xv_loss
+        if (rec_dielectric_stat == 1) call record_profile_dielectric_stat
 
         ! call rec_para
         ! I dont think repeating rec_par makes sense
@@ -541,6 +542,28 @@ subroutine record_profile_xv_loss
     write (26,301)xv_loss
     close(26)
 end subroutine record_profile_xv_loss
+
+subroutine record_profile_dielectric_stat
+    USE the_whole_varibles
+    implicit none
+    character*30 fname
+    character*256 fullpath
+    integer*4 :: i_comp
+
+300 format(<nr>(e12.5,' '))
+127 format('dielectric_stat_',i0,'.dat')
+
+    write (fname,127)ifig
+    fullpath=trim(outputDir)//trim(fname)
+    open (unit=27,file=fullpath,status='unknown',iostat=ierror)
+    do i_comp=1,7
+        write (27,300)nu_depo_in_FDFD(:,:,i_comp)
+    enddo
+    do i_comp=1,4
+        write (27,300)t_in_dielectric(:,:,i_comp)
+    enddo
+    close(27)
+end subroutine record_profile_dielectric_stat
 
 subroutine record_dev_FDFD
     use the_whole_varibles

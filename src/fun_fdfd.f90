@@ -253,6 +253,11 @@ subroutine find_Dielectric_tensor
                 endif
             end if
 
+            t_in_dielectric(ir,iz,1) = tpp(1,1)
+            t_in_dielectric(ir,iz,2) = tpp(2,1)
+            t_in_dielectric(ir,iz,3) = tpp(1,2)
+            t_in_dielectric(ir,iz,4) = tpp(2,2)
+
             if (iswitch_dielectric==3 .or. iswitch_dielectric==4) then
                 if (k_closure_type==0) then
                     kap1=200.0d0

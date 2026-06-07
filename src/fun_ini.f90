@@ -822,20 +822,22 @@ subroutine setRec
         & rec_Ek_ave_z, &
         & rec_ions_rz, &
         & rec_density_Es_2D, &
-        & rec_Erf_all_m
+        & rec_Erf_all_m, &
+        & rec_dielectric_stat
     
+    rec_xv_loss = 0
+    rec_plasma = 1
+    rec_rf_field = 1
+    rec_Ek_ave_z = 1
+    rec_ions_rz = 1
+    rec_density_Es_2D = 1
+    rec_Erf_all_m = 1
+    rec_dielectric_stat = 1
+
     if (dev_Only4CalE == 1 .or. dev_Only4CalMag == 1) then
         open(newunit=nmlid, file=trim(nmlfile), status="old")
         read(nmlid, nml=recConfig)
         close(nmlid)
-    else
-        rec_xv_loss = 0
-        rec_plasma = 1
-        rec_rf_field = 1
-        rec_Ek_ave_z = 1
-        rec_ions_rz = 1
-        rec_density_Es_2D = 1
-        rec_Erf_all_m = 1
     end if
 
 end subroutine setRec

@@ -941,9 +941,11 @@ end subroutine find_power
 subroutine accumulateStatisticBeforeFDFD
     USE the_whole_varibles
     implicit none
+    logical :: need_statistic
 
+    need_statistic = iswitch_v_closure_type==2 .or. iswitch_T_closure_type==2 .or. rec_dielectric_stat==1
     if(iswitch_dielectric/=3 .and. iswitch_dielectric/=4)return
-    if(iswitch_v_closure_type/=2 .and. iswitch_T_closure_type/=2)return
+    if(.not. need_statistic)return
 
     if((mod((t+trf),dt_run_fdfd)<dt) .and. t>t_power_on .and. t<t_power_end .and. statistic_trigger==0)then
         statistic_trigger=1
@@ -962,16 +964,19 @@ end subroutine accumulateStatisticBeforeFDFD
 subroutine prepareStatisticForFDFD
     USE the_whole_varibles
     implicit none
+    logical :: need_statistic
 
     statistic_ready=0
+    need_statistic = iswitch_v_closure_type==2 .or. iswitch_T_closure_type==2 .or. rec_dielectric_stat==1
     if(iswitch_dielectric/=3 .and. iswitch_dielectric/=4)return
-    if(iswitch_v_closure_type/=2 .and. iswitch_T_closure_type/=2)return
+    if(.not. need_statistic)return
 
     if(statistic_trigger==1 .and. statistic_acc_number>0)then
         nu_depo=nu_depo/real(statistic_acc_number)
         u2_depo=u2_depo/real(statistic_acc_number)
         n_depo=n_depo/real(statistic_acc_number)
         call calculateTemperatureStatistic
+        nu_depo_in_FDFD=nu_depo
         statistic_ready=1
     endif
 

@@ -218,6 +218,7 @@ subroutine injection_inlet_sub(ip_set)
     t_np(ip_set)=t
     particle_id_counter=particle_id_counter+1
     particle_id(ip_set)=particle_id_counter
+    vz_inject(ip_set)=v(ip_set,3)
     life_and_ek(ip_set,1)=t
     life_and_ek(ip_set,2)=mass_q_i_05*sum(v(ip_set,1:3)**2)
     Ek_inject_tol=Ek_inject_tol+life_and_ek(ip_set,2)
@@ -776,6 +777,7 @@ subroutine remove_particle(ip_remove)
         x_to_grid(ip_remove,1:2)=x_to_grid(n_active,1:2)
         ir1_iz1_grid(ip_remove,1:2)=ir1_iz1_grid(n_active,1:2)
         particle_id(ip_remove)=particle_id(n_active)
+        vz_inject(ip_remove)=vz_inject(n_active)
     endif
     n_active=n_active-1
 end subroutine remove_particle
@@ -810,6 +812,7 @@ subroutine register_particle_loss(iloss)
     N_lost_particles=N_lost_particles+1
     if(iloss==2)then
         perf_exit_momentum_z=perf_exit_momentum_z+v(ip,3)
+        perf_source_gain_z=perf_source_gain_z+(v(ip,3)-vz_inject(ip))
         perf_exit_count=perf_exit_count+1.0d0
     endif
 
@@ -825,7 +828,8 @@ subroutine update_performance_period
 
     perf_dt=max(t-perf_t0,1.0d-30)
     thrust_total=perf_exit_momentum_z*n_macro*mi/perf_dt
-    thrust_source=(perf_exit_momentum_z-perf_inject_momentum_z)*n_macro*mi/perf_dt
+    ! Ts：下游出口离子相对其注入时的 z 动量增益(ICRH 段对穿出束的净加速)
+    thrust_source=perf_source_gain_z*n_macro*mi/perf_dt
 
     mdot_in=deltaN*n_macro*mi/dt
     mdot_out=perf_exit_count*n_macro*mi/perf_dt
@@ -846,6 +850,7 @@ subroutine update_performance_period
 
     perf_exit_momentum_z=0.0d0
     perf_inject_momentum_z=0.0d0
+    perf_source_gain_z=0.0d0
     perf_exit_count=0.0d0
     perf_inject_count=0.0d0
     perf_t0=t
@@ -1070,7 +1075,7 @@ subroutine ensure_particle_capacity(required_capacity)
     implicit none
     integer*4 :: required_capacity, new_capacity
     integer, allocatable :: np_tmp(:), ir_tmp(:,:), id_tmp(:)
-    real*8, allocatable :: x_tmp(:,:), v_tmp(:,:), v_e_tmp(:,:), t_tmp(:), xg_tmp(:,:), life_tmp(:,:)
+    real*8, allocatable :: x_tmp(:,:), v_tmp(:,:), v_e_tmp(:,:), t_tmp(:), xg_tmp(:,:), life_tmp(:,:), vzin_tmp(:)
 
     if(required_capacity<=n_capacity)return
 
@@ -1085,6 +1090,7 @@ subroutine ensure_particle_capacity(required_capacity)
     allocate(t_tmp(1:new_capacity))
     allocate(xg_tmp(1:new_capacity,1:2))
     allocate(life_tmp(1:new_capacity,1:2))
+    allocate(vzin_tmp(1:new_capacity))
 
     np_tmp=0
     id_tmp=0
@@ -1095,9 +1101,11 @@ subroutine ensure_particle_capacity(required_capacity)
     t_tmp=0.0d0
     xg_tmp=0.0d0
     life_tmp=0.0d0
+    vzin_tmp=0.0d0
 
     np_tmp(1:n_active)=np(1:n_active)
     id_tmp(1:n_active)=particle_id(1:n_active)
+    vzin_tmp(1:n_active)=vz_inject(1:n_active)
     ir_tmp(1:n_active,1:2)=ir1_iz1_grid(1:n_active,1:2)
     x_tmp(1:n_active,1:3)=x(1:n_active,1:3)
     v_tmp(1:n_active,1:3)=v(1:n_active,1:3)
@@ -1106,9 +1114,10 @@ subroutine ensure_particle_capacity(required_capacity)
     xg_tmp(1:n_active,1:2)=x_to_grid(1:n_active,1:2)
     life_tmp(1:n_active,1:2)=life_and_ek(1:n_active,1:2)
 
-    deallocate(np,particle_id,ir1_iz1_grid,x,v,v_e,t_np,x_to_grid,life_and_ek)
+    deallocate(np,particle_id,vz_inject,ir1_iz1_grid,x,v,v_e,t_np,x_to_grid,life_and_ek)
     allocate(np(1:new_capacity))
     allocate(particle_id(1:new_capacity))
+    allocate(vz_inject(1:new_capacity))
     allocate(ir1_iz1_grid(1:new_capacity,1:2))
     allocate(x(1:new_capacity,1:3))
     allocate(v(1:new_capacity,1:3))
@@ -1119,6 +1128,7 @@ subroutine ensure_particle_capacity(required_capacity)
 
     np=np_tmp
     particle_id=id_tmp
+    vz_inject=vzin_tmp
     ir1_iz1_grid=ir_tmp
     x=x_tmp
     v=v_tmp

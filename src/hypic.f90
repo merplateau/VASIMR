@@ -117,10 +117,12 @@ module the_whole_varibles
     real*8, allocatable :: life_and_ek(:,:)
     integer*4, allocatable :: particle_id(:)
     integer*4 :: particle_id_counter=0
+    real*8, allocatable :: vz_inject(:)
     real*8 :: Ek_total_last_joules=0.0d0, Ek_total_current_joules=0.0d0
     real*8 :: thrust_source=0.0d0, thrust_total=0.0d0
     real*8 :: ISP_global=0.0d0, ISP_plume=0.0d0
     real*8 :: perf_exit_momentum_z=0.0d0, perf_inject_momentum_z=0.0d0
+    real*8 :: perf_source_gain_z=0.0d0
     real*8 :: perf_exit_count=0.0d0, perf_inject_count=0.0d0, perf_t0=0.0d0
     real*8 :: loading_stability_data(1:3,1:20)=0.0d0
     real*8 :: loading_cv_percent=0.0d0, loading_s_percent=0.0d0

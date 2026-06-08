@@ -659,6 +659,7 @@ subroutine power_ini
     ISP_plume = 0.0d0
     perf_exit_momentum_z = 0.0d0
     perf_inject_momentum_z = 0.0d0
+    perf_source_gain_z = 0.0d0
     perf_exit_count = 0.0d0
     perf_inject_count = 0.0d0
     perf_t0 = t
@@ -739,6 +740,7 @@ subroutine allocate_particle_arrays
     allocate(t_np(1:n_capacity))
     allocate(x_to_grid(1:n_capacity,1:2))
     allocate(particle_id(1:n_capacity))
+    allocate(vz_inject(1:n_capacity))
     x=0.0d0
     v=0.0d0
     v_e=0.0d0
@@ -746,6 +748,7 @@ subroutine allocate_particle_arrays
     x_to_grid=0.0d0
     ir1_iz1_grid=0
     particle_id=0
+    vz_inject=0.0d0
     np_loss_rec = n_capacity
     if (rec_xv_loss == 1) then
         allocate(xv_loss(1:np_loss_rec,1:7))

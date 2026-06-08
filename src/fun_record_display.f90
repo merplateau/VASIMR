@@ -5,6 +5,7 @@ subroutine display_main
     character(len=*),parameter::esc=achar(27)
     logical,save::first_log_display=.true.
     real*8::r_max(1:n6),tau_eq(1:nr,1:nz),nu_0,veq,loss_power
+    real*8::eta_hours,absorbed_loading,deposited_loading
     call find_func_cputime_1_of_2  !-------------------1/2
 
     loss_power=power_loss_ave(3)
@@ -124,27 +125,52 @@ subroutine display_main
             write(*,*)
         
         else if (iswitch_log == 1) then
-            if (.not. first_log_display) then
-                write(*,'(a)',advance='no') esc//'[9A'
+            if(tp1>1.0d-12)then
+                eta_hours=time_run/60.0d0/tp1*(1.0d0-tp1)
+            else
+                eta_hours=0.0d0
             endif
-            
-            write(*, "(a,'------------------------------------------------------------------------')") esc//'[2K'
-            write(*, "(a,'running at ', f0.2,' % (estimating ',f0.2,' hours left)')") &
-                esc//'[2K', tp1*100, time_run/60./tp1*(1-tp1)
-            write(*, "(a,'(absorbed)  plasma loading = ', I0, ' mOhm')") &
-                esc//'[2K', nint(2*absorbed_power/(irf_set**2)*1e3)
-            write(*, "(a,'(deposited) plasma loading = ', I0, ' mOhm')") &
-                esc//'[2K', nint(2*ptotal/(irf_set**2)*1e3)
-            write(*, "(a,'recorded ', I0, ' of ', I0)") &
-                esc//'[2K', ifig-1,n_pic
-            write(*, "(a,'Ts, Tt = ', f0.3, ', ', f0.3, ' mN')") &
+            if(eta_hours<0.0d0)eta_hours=0.0d0
+            if(eta_hours>9999.0d0)eta_hours=9999.0d0   ! 固定宽度，防止早期巨大ETA溢出成***
+            absorbed_loading=2.0d0*absorbed_power/(irf_set**2)*1.0d3
+            deposited_loading=2.0d0*ptotal/(irf_set**2)*1.0d3
+
+            if (.not. first_log_display) then
+                write(*,'(a)',advance='no') esc//'[19A'
+            endif
+
+            ! 所有行固定宽度，每行恰好 72 列(=分隔线宽)，单位占最后5列(首列空格)
+            write(*, "(a,'-VASIMR/ICRH/SIMULATION-------------------------------------------------')") esc//'[2K'
+            write(*, "(a,1x,f6.2,'%  ETA ',f7.1,' h',40x,'REC ',i2.2,'/',i2.2)") &
+                esc//'[2K', tp1*100.0d0, eta_hours, max(ifig-1,0), n_pic
+            write(*, "(a)") esc//'[2K'
+            write(*, "(a,'-PARAMETER--------------------------------------------------------VALUE-')") esc//'[2K'
+            write(*, "(a,' P/ABS, P/DEP',38x,f7.2,', ',f7.2,' mOhm')") &
+                esc//'[2K', absorbed_loading, deposited_loading
+            write(*, "(a,' T/ICR, T/ALL',38x,f7.3,', ',f7.2,' mN  ')") &
                 esc//'[2K', thrust_source*1.0d3, thrust_total*1.0d3
-            write(*, "(a,'ISPg, ISPp = ', f0.1, ', ', f0.1, ' s')") &
+            write(*, "(a,' ISP/G, ISP/P',38x,f7.1,', ',f7.1,' s   ')") &
                 esc//'[2K', ISP_global, ISP_plume
-            write(*, "(a,'n_active = ', I0)") &
-                esc//'[2K', n_active
-            write(*, "(a,'CV, S = ', I0, '%, ', I0, '%')") &
-                esc//'[2K', nint(loading_cv_percent), nint(loading_s_percent)
+            write(*, "(a,' N/ACT',53x,i8,' -   ')") esc//'[2K', n_active
+            write(*, "(a,' CV,    S',46x,i3,'%, ',f6.2,' %   ')") &
+                esc//'[2K', nint(loading_cv_percent), loading_s_percent
+            write(*, "(a)") esc//'[2K'
+            write(*, "(a,'-HISTORY--------OLD-------------------------------------------------NOW-')") esc//'[2K'
+            call display_history_line(' CV [CONVERGE]',loading_cv_history,loading_stability_count)
+            call display_history_line(' S            ',loading_s_history,loading_stability_count)
+            write(*, "(a)") esc//'[2K'
+            write(*, "(a,'-MESSAGE----------------------------------------------------------------')") esc//'[2K'
+            if(simulation_converged==1 .and. convergence_prompt_done==0)then
+                write(*, "(a,' [!] SIMULATION CONVERGED')") esc//'[2K'
+                write(*, "(a,'  -[1] TO STOP PROGRAM, TYPE',35x,'exit -   ')") esc//'[2K'
+                write(*, "(a,'  -[2] TO KEEP RUNNING, TYPE',35x,'keep -   ')") esc//'[2K'
+                write(*, "(a,'  -[3] AUTO EXIT COUNTDOWN',36x,i5,' s   ')") esc//'[2K', 120
+            else
+                write(*, "(a,' [ ] SIMULATION RUNNING')") esc//'[2K'
+                write(*, "(a)") esc//'[2K'
+                write(*, "(a)") esc//'[2K'
+                write(*, "(a)") esc//'[2K'
+            endif
 
             first_log_display=.false.
             
@@ -153,6 +179,74 @@ subroutine display_main
     endif
     call find_func_cputime_2_of_2(func_time(7))  !-----2/2
 end subroutine display_main
+
+subroutine display_history_line(label,history,n_hist)
+    USE the_whole_varibles
+    implicit none
+    character(len=*),parameter::esc=achar(27)
+    character(len=*),intent(in)::label
+    real*8,intent(in)::history(1:20)
+    integer*4,intent(in)::n_hist
+    integer*4::i_hist,i_start
+
+    write(*,'(a)',advance='no') esc//'[2K'
+    write(*,'(a)',advance='no') label
+    i_start=max(1,n_hist-13)
+    do i_hist=i_start,n_hist
+        write(*,'(1x,i3)',advance='no') nint(history(i_hist))
+    enddo
+    write(*,*)
+end subroutine display_history_line
+
+subroutine handle_convergence_prompt
+    USE the_whole_varibles
+    implicit none
+    integer :: ierror_resp, ios
+    character(len=256) :: response_file
+    character(len=64) :: response
+    character(len=2000) :: cmd
+
+    response_file=trim(outputDir)//trim('1convergence_response.tmp')
+    cmd='powershell -NoProfile -Command "' // &
+        '$p=''' // trim(response_file) // '''; ' // &
+        '$deadline=(Get-Date).AddSeconds(120); $s=''''; ' // &
+        'while((Get-Date) -lt $deadline){ ' // &
+        'if([Console]::KeyAvailable){ $k=[Console]::ReadKey($true); ' // &
+        'if($k.Key -eq ''Enter''){ break }; $s += $k.KeyChar; [Console]::Write($k.KeyChar) }; ' // &
+        'Start-Sleep -Milliseconds 100 }; ' // &
+        'if($s -eq ''''){ $s=''timeout'' }; Set-Content -Path $p -Value $s -Encoding ASCII"'
+
+    call execute_command_line(trim(cmd), exitstat=ierror_resp)
+
+    response='timeout'
+    open(unit=91,file=trim(response_file),status='old',action='read',iostat=ios)
+    if(ios==0)then
+        read(91,'(a)',iostat=ios)response
+        close(91)
+    endif
+    call lowercase_inplace(response)
+    response=adjustl(response)
+
+    convergence_prompt_done=1
+    if(index(response,'keep')==1)then
+        convergence_exit_requested=0
+    else
+        convergence_exit_requested=1
+    endif
+end subroutine handle_convergence_prompt
+
+subroutine lowercase_inplace(text)
+    implicit none
+    character(len=*),intent(inout)::text
+    integer :: i_char,code_char
+
+    do i_char=1,len_trim(text)
+        code_char=iachar(text(i_char:i_char))
+        if(code_char>=iachar('A') .and. code_char<=iachar('Z'))then
+            text(i_char:i_char)=achar(code_char+32)
+        endif
+    enddo
+end subroutine lowercase_inplace
 
 
 subroutine record_loading_history(event_type)
@@ -202,13 +296,20 @@ subroutine update_loading_stability(absorbed_loading,deposited_loading,ek_total)
         loading_stability_count=loading_stability_count+1
     else
         loading_stability_data(:,1:19)=loading_stability_data(:,2:20)
+        loading_cv_history(1:19)=loading_cv_history(2:20)
+        loading_s_history(1:19)=loading_s_history(2:20)
     endif
     loading_stability_data(:,loading_stability_count)=values
 
     n_hist=loading_stability_count
     loading_cv_percent=0.0d0
     loading_s_percent=0.0d0
-    if(n_hist<2)return
+    if(n_hist<2)then
+        loading_cv_history(n_hist)=0.0d0
+        loading_s_history(n_hist)=0.0d0
+        convergence_start_t=-1.0d0
+        return
+    endif
 
     sum_i=0.0d0
     sum_i2=0.0d0
@@ -241,6 +342,20 @@ subroutine update_loading_stability(absorbed_loading,deposited_loading,ek_total)
         endif
         loading_s_percent=max(loading_s_percent,100.0d0*s_x)
     enddo
+
+    loading_cv_history(n_hist)=loading_cv_percent
+    loading_s_history(n_hist)=loading_s_percent
+
+    if(convergence_prompt_done==0 .and. simulation_converged==0)then
+        if(loading_cv_percent<convergeGateCV .and. loading_s_percent<convergeGateS)then
+            if(convergence_start_t<0.0d0)convergence_start_t=t
+            if(t-convergence_start_t>=real(convergeGateTrf,8)*trf)then
+                simulation_converged=1
+            endif
+        else
+            convergence_start_t=-1.0d0
+        endif
+    endif
 end subroutine update_loading_stability
 
 

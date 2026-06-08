@@ -43,6 +43,9 @@ subroutine initialize
         & plasmaLoadDir, &
         & iswitch_log, &
         & iswitch_play_trajectory, &
+        & convergeGateCV, &
+        & convergeGateS, &
+        & convergeGateTrf, &
         & iswitch_frozen_field, &
         & dev_only_replay, &
         & replayFieldDir, &
@@ -60,6 +63,9 @@ subroutine initialize
     namelist /dev/ &
         & dev_Only4CalMag, &
         & dev_Only4CalE, &
+        & convergeGateCV, &
+        & convergeGateS, &
+        & convergeGateTrf, &
         & iswitch_frozen_field, &
         & dev_only_replay, &
         & replayFieldDir, &
@@ -72,6 +78,9 @@ subroutine initialize
     dev_Only4CalE=0
     dev_only_replay=0
     iswitch_frozen_field=0
+    convergeGateCV=3.0d0
+    convergeGateS=3.0d0
+    convergeGateTrf=80
     replayFieldDir=''
     replayTrajectoryDir=''
 
@@ -664,9 +673,15 @@ subroutine power_ini
     perf_inject_count = 0.0d0
     perf_t0 = t
     loading_stability_data(:,1:20)=0.0d0
+    loading_cv_history(1:20)=0.0d0
+    loading_s_history(1:20)=0.0d0
     loading_cv_percent=0.0d0
     loading_s_percent=0.0d0
     loading_stability_count=0
+    convergence_start_t=-1.0d0
+    simulation_converged=0
+    convergence_prompt_done=0
+    convergence_exit_requested=0
 end subroutine power_ini
 
 subroutine configure_variable_particles

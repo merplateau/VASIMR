@@ -126,7 +126,12 @@ module the_whole_varibles
     real*8 :: perf_exit_count=0.0d0, perf_inject_count=0.0d0, perf_t0=0.0d0
     real*8 :: loading_stability_data(1:3,1:20)=0.0d0
     real*8 :: loading_cv_percent=0.0d0, loading_s_percent=0.0d0
+    real*8 :: loading_cv_history(1:20)=0.0d0, loading_s_history(1:20)=0.0d0
+    real*8 :: convergence_start_t=-1.0d0
+    real*8 :: convergeGateCV=3.0d0, convergeGateS=3.0d0
     integer*4 :: loading_stability_count=0
+    integer*4 :: convergeGateTrf=80
+    integer*4 :: simulation_converged=0, convergence_prompt_done=0, convergence_exit_requested=0
 
     !particles
     integer*4,parameter:: iseed=1234567,nrec_t=42,nrec_p=20,te_update_interval=1000
@@ -310,6 +315,8 @@ Program hypic
         call rec_time_trajectory        
         call record_profiles
         call display_main
+        if(simulation_converged==1 .and. convergence_prompt_done==0) call handle_convergence_prompt
+        if(convergence_exit_requested==1) exit
         if( t>td ) exit
     enddo
 

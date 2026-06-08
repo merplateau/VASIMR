@@ -255,6 +255,9 @@ module the_whole_varibles
     real*8,allocatable :: nu_depo(:,:,:), u2_depo(:,:,:), t_depo(:,:,:), n_depo(:,:), vl_closure_prev(:,:)
     real*8,allocatable :: nu_depo_in_FDFD(:,:,:), t_in_dielectric(:,:,:)
     integer*4 :: statistic_trigger=0, statistic_acc_number=0, statistic_ready=0
+
+    real*8 :: Ti_inj_perp, Ti_inj_para
+    real*8 :: vi_ex_inj_perp, vi_ex_inj_para
 end module the_whole_varibles
 
 Program hypic

@@ -22,6 +22,8 @@ subroutine initialize
         & tipp_uni, &
         & tell_uni, &
         & t2pp_uni, &
+        & vi_ex_inj_perp, &
+        & vi_ex_inj_para, &
         & TminLim, &
         & iswitch_analytic_profile, &
         & iswitch_mcc, &
@@ -308,8 +310,12 @@ subroutine initialize
     call configure_variable_particles
     call allocate_particle_arrays
     
-    vi_ex=sqrt(qe_abs*ti_ini/mi);     !expectation of vi :  average speed
+    !vi_ex=sqrt(qe_abs*ti_ini/mi);     !expectation of vi :  average speed
     ve_ex=sqrt(qe_abs*te_ini/me);     !expectation of ve :  average speed
+
+    vi_ex_inj_perp=sqrt(qe_abs*Ti_inj_perp/mi);
+    vi_ex_inj_para=sqrt(qe_abs*Ti_inj_para/mi);
+
     ek_ion_2D=ti_ini*1.5
     ek_ion_2D_r=ek_ion_2D/1.5
     t_rec_profiles=td/real(n_pic)

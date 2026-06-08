@@ -22,8 +22,8 @@ subroutine initialize
         & tipp_uni, &
         & tell_uni, &
         & t2pp_uni, &
-        & vi_ex_inj_perp, &
-        & vi_ex_inj_para, &
+        & Ti_inj_perp, &
+        & Ti_inj_para, &
         & TminLim, &
         & iswitch_analytic_profile, &
         & iswitch_mcc, &

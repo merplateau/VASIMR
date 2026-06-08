@@ -108,19 +108,22 @@ subroutine set_particle_velocity(ip_set)
     call random_number(tp1)
     call random_number(tp2)
     tp3=sqrt(-2*log(tp1))*cos(2*pi*tp2)
-    v(ip_set,1)=vi_ex*tp3
+    !v(ip_set,1)=vi_ex*tp3
+    v(ip_set,1)=vi_ex_inj_perp*tp3
     v_e(ip_set,1)=ve_ex*tp3
 
     call random_number(tp1)
     call random_number(tp2)
     tp3=sqrt(-2*log(tp1))*cos(2*pi*tp2)
-    v(ip_set,2)=vi_ex*tp3
+    !v(ip_set,2)=vi_ex*tp3
+    v(ip_set,2)=vi_ex_inj_perp*tp3
     v_e(ip_set,2)=ve_ex*tp3
 
     call random_number(tp1)
     call random_number(tp2)
     tp3=sqrt(-2*log(tp1))*cos(2*pi*tp2)
-    v(ip_set,3)=vi_ex*tp3+vz0
+    !v(ip_set,3)=vi_ex*tp3+vz0
+    v(ip_set,3)=vi_ex_inj_para*tp3+vz0
     v_e(ip_set,3)=ve_ex*tp3
 end subroutine set_particle_velocity
 

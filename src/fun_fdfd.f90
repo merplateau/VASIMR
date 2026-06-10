@@ -396,6 +396,7 @@ subroutine find_Dielectric_tensor
     if (iswitch_vacum_dielectric_type == 11) si(:,:,:,:)=0.0D0*i
     if (iswitch_vacum_dielectric_type == 1) si_species(nrp+1:nr,:,:,:,:)=0.0D0*i
     if (iswitch_vacum_dielectric_type == 11) si_species(:,:,:,:,:)=0.0D0*i
+    if (iswitch_baffle == 1) call apply_baffle_dielectric
 
     ep(:,:,1)=1.0D0+i/(epson0*om)*si(:,:,1,1)
     ep(:,:,5)=1.0D0+i/(epson0*om)*si(:,:,2,2)
@@ -1173,13 +1174,69 @@ subroutine ptotalsolve
     !enddo
 end subroutine ptotalsolve
 
+subroutine find_baffle_z_indices(iz_b1,iz_b2)
+    use the_whole_varibles
+    implicit none
+    integer*4 :: iz_b1,iz_b2
+    integer*4 :: iz_scan,iz_center
+    real*8 :: z_left,z_right
+
+    z_left=zBaffle-0.5d0*dzBaffle
+    z_right=zBaffle+0.5d0*dzBaffle
+
+    iz_b1=nz+1
+    iz_b2=0
+    do iz_scan=1,nz
+        if(z(iz_scan)>=z_left .and. z(iz_scan)<=z_right)then
+            iz_b1=min(iz_b1,iz_scan)
+            iz_b2=max(iz_b2,iz_scan)
+        endif
+    enddo
+
+    if(iz_b1>iz_b2)then
+        iz_center=minloc(abs(zBaffle-z),1)
+        iz_b1=iz_center
+        iz_b2=iz_center
+    endif
+
+    iz_b1=max(1,min(nz,iz_b1))
+    iz_b2=max(1,min(nz,iz_b2))
+end subroutine find_baffle_z_indices
+
+subroutine apply_baffle_dielectric
+    use the_whole_varibles
+    implicit none
+    real*8, parameter :: sigma_baffle=1.0d12
+    integer*4 :: ir_b1,ir_b2,iz_b1,iz_b2,ir_b,iz_b,iv
+
+    call find_baffle_z_indices(iz_b1,iz_b2)
+    if(iz_b2-iz_b1<2)return
+
+    do iv=1,n_vac
+        ir_b1=max(1,min(nr,nr_vac(iv)+1))
+        ir_b2=max(1,min(nr,nr_met(iv)-1))
+        if(ir_b2<ir_b1)cycle
+        do iz_b=iz_b1+1,iz_b2-1
+            do ir_b=ir_b1,ir_b2
+                si(ir_b,iz_b,:,:)=0.0d0*i
+                si(ir_b,iz_b,1,1)=sigma_baffle
+                si(ir_b,iz_b,2,2)=sigma_baffle
+                si(ir_b,iz_b,3,3)=sigma_baffle
+                si_species(ir_b,iz_b,:,:,:)=0.0d0*i
+            enddo
+        enddo
+    enddo
+end subroutine apply_baffle_dielectric
+
 
 subroutine Find_Region(nr,nz,n_vac,nr_vac,nr_met,nz_vac,FindRegion)
+    use the_whole_varibles, only: iswitch_baffle
     implicit none
     integer*4 :: nr,nz,ir,iz,nn,n_vac
     integer*4 :: nr_vac(n_vac),nz_vac(n_vac),nr_met(n_vac)!,nrz_diploe(n_vac),iswtich_inner_dipole
     integer*4 :: FindRegion(nr,nz),F1(nr,0:nz+1)
     integer*4 :: nz_vac1(0:n_vac)
+    integer*4 :: ir_b1,ir_b2,iz_b1,iz_b2
     nz_vac1(0)=1;nz_vac1(1:n_vac)=nz_vac(:);
 
     FindRegion(:,:)=0;  F1(:,:)=0
@@ -1251,6 +1308,19 @@ subroutine Find_Region(nr,nz,n_vac,nr_vac,nr_met,nz_vac,FindRegion)
             endif
         enddo
     enddo
+
+    if(iswitch_baffle==1)then
+        call find_baffle_z_indices(iz_b1,iz_b2)
+        do nn=1,n_vac
+            ir_b1=max(1,min(nr,nr_vac(nn)))
+            ir_b2=max(1,min(nr,nr_met(nn)))
+            if(ir_b2<ir_b1)cycle
+            F1(ir_b1:ir_b2,iz_b1)=11
+            F1(ir_b1:ir_b2,iz_b2)=11
+            F1(ir_b1,iz_b1:iz_b2)=11
+            F1(ir_b2,iz_b1:iz_b2)=11
+        enddo
+    endif
 
     FindRegion(:,:)=F1(1:nr,1:nz)
     if(minval(FindRegion(:,:))==0)then

@@ -1,7 +1,7 @@
 subroutine initialize
     use the_whole_varibles
     implicit none
-    integer:: I_r,I_z,i1,i2,nmlid
+    integer:: I_r,I_z,i1,i2,nmlid,nml_status
     real*8  r_resonance,z_resonance,b0_set
     real*8  total_cycles,tau_ion_predicted
 
@@ -32,6 +32,7 @@ subroutine initialize
         & resistance, &
         & i_switch_B0, &
         & export_real_B0, &
+        & iswitch_baffle, &
         & max_density_set, &
         & vz0, &
         & vl_in_FDFD, &
@@ -72,6 +73,11 @@ subroutine initialize
         & dev_only_replay, &
         & replayFieldDir, &
         & replayTrajectoryDir
+
+    namelist /configBaffle/ &
+        & iswitch_zBaffle, &
+        & zBaffle, &
+        & dzBaffle
     
 
     call start_ftime
@@ -80,6 +86,10 @@ subroutine initialize
     dev_Only4CalE=0
     dev_only_replay=0
     iswitch_frozen_field=0
+    iswitch_baffle=0
+    iswitch_zBaffle=0
+    zBaffle=-0.08d0
+    dzBaffle=0.01d0
     convergeGateCV=3.0d0
     convergeGateS=3.0d0
     convergeGateTrf=80
@@ -105,6 +115,10 @@ subroutine initialize
 
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=dev)
+    close(nmlid)
+
+    open(newunit=nmlid, file=trim(nmlfile), status="old")
+    read(nmlid, nml=configBaffle, iostat=nml_status)
     close(nmlid)
 
     if(len_trim(replayFieldDir)==0)replayFieldDir=outputDir
@@ -267,6 +281,7 @@ subroutine initialize
         b0_DC=b0_DC*B0_correction_factor
     endif
     bz_max=maxval(b0_DC(1:2,1:nz,4))
+    call setup_baffle
     if(export_real_B0==1)call record_real_B0
     
 
@@ -341,6 +356,33 @@ subroutine initialize
     
     if ((iswitch_dielectric == 3 .or. iswitch_dielectric == 4) .and. k_closure_type == 2) call readKapFromFile
 end subroutine initialize
+
+subroutine setup_baffle
+    use the_whole_varibles
+    implicit none
+    integer*4 :: iz_baffle, iz_b1, iz_b2
+
+    if(iswitch_baffle/=1)return
+
+    if(iswitch_zBaffle==0)then
+        iz_baffle=maxloc(b0_DC(1,1:nz,3),1)
+        zBaffle=z(iz_baffle)
+    endif
+
+    if(dzBaffle<=0.0d0)dzBaffle=dz
+    zBaffle=max(zs,min(zd,zBaffle))
+
+    call find_baffle_z_indices(iz_b1,iz_b2)
+    if(iswitch_display/=0)then
+        if(iswitch_zBaffle==0)then
+            write(*,"('Baffle enabled: auto zBaffle = ',f10.5,' m, dzBaffle = ',f10.5,' m, iz = ',i0,'...',i0)") &
+                zBaffle,dzBaffle,iz_b1,iz_b2
+        else
+            write(*,"('Baffle enabled: nml  zBaffle = ',f10.5,' m, dzBaffle = ',f10.5,' m, iz = ',i0,'...',i0)") &
+                zBaffle,dzBaffle,iz_b1,iz_b2
+        endif
+    endif
+end subroutine setup_baffle
 
 subroutine record_real_B0
     use the_whole_varibles

@@ -33,6 +33,7 @@ subroutine initialize
         & i_switch_B0, &
         & export_real_B0, &
         & iswitch_baffle, &
+        & iswitch_cancel_Erf_before_peak, &
         & max_density_set, &
         & vz0, &
         & vl_in_FDFD, &
@@ -87,6 +88,7 @@ subroutine initialize
     dev_only_replay=0
     iswitch_frozen_field=0
     iswitch_baffle=0
+    iswitch_cancel_Erf_before_peak=0
     iswitch_zBaffle=0
     zBaffle=-0.08d0
     dzBaffle=0.01d0
@@ -281,6 +283,8 @@ subroutine initialize
         b0_DC=b0_DC*B0_correction_factor
     endif
     bz_max=maxval(b0_DC(1:2,1:nz,4))
+    I_z=maxloc(b0_DC(1,1:nz,3),1)
+    zBPeak=z(I_z)
     call setup_baffle
     if(export_real_B0==1)call record_real_B0
     
@@ -360,13 +364,12 @@ end subroutine initialize
 subroutine setup_baffle
     use the_whole_varibles
     implicit none
-    integer*4 :: iz_baffle, iz_b1, iz_b2
+    integer*4 :: iz_b1, iz_b2
 
     if(iswitch_baffle/=1)return
 
     if(iswitch_zBaffle==0)then
-        iz_baffle=maxloc(b0_DC(1,1:nz,3),1)
-        zBaffle=z(iz_baffle)
+        zBaffle=zBPeak
     endif
 
     if(dzBaffle<=0.0d0)dzBaffle=dz

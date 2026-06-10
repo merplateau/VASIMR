@@ -286,12 +286,13 @@ subroutine interpolation_E_B(B_mover,E_mover)
     real*8:: B_mover(1:3),E_mover(1:3)
     Real*8::s1,s2,s3,s4
     Real*8::br,bz
-    Real*8::Es_dc(1:3)
+    Real*8::Es_dc(1:3),Erf_cyl(1:3)
     
     !B_mover,E_mover - Bx By Bz Ex Ey Ez
     B_mover=0.0d0
     E_mover=0.0d0
     Es_dc=0.0d0
+    Erf_cyl=0.0d0
 
     rtp=sqrt(x(ip,1)**2+x(ip,2)**2)+1e-20;
     xtp=x(ip,1)
@@ -338,7 +339,9 @@ subroutine interpolation_E_B(B_mover,E_mover)
     endif
     
     !state_power_on_off  on->1;  0->off
-    erthz(1:3)=Es_dc(1:3)+state_power_on_off*(real(expt*c1_6(1:3))+real(expt2*c1_6(4:6)));
+    Erf_cyl(1:3)=state_power_on_off*(real(expt*c1_6(1:3))+real(expt2*c1_6(4:6)))
+    if(iswitch_cancel_Erf_before_peak==1 .and. x(ip,3)<zBPeak+1.0d-3)Erf_cyl=0.0d0
+    erthz(1:3)=Es_dc(1:3)+Erf_cyl(1:3)
 
     ! (r,th,z) ->(x,y,z)
     E_mover(1)=erthz(1)*costh-erthz(2)*sinth

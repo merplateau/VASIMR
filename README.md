@@ -26,6 +26,30 @@ set "VS2022INSTALLDIR=D:\Program Files\Microsoft Visual Studio\2022\Community"
 call "D:\Program Files (x86)\Intel\oneAPI\setvars.bat"
 ```
 
+在新 Windows 机器上生成本机专用编译脚本时，可以先复制一份：
+
+```cmd
+copy compile.bat compile1.bat
+```
+
+然后用 PowerShell 探测本机安装路径：
+
+```powershell
+Get-ChildItem -Path 'C:\Program Files\Microsoft Visual Studio','C:\Program Files (x86)\Microsoft Visual Studio' -Recurse -Filter vswhere.exe -ErrorAction SilentlyContinue | Select-Object -First 10 FullName
+Get-ChildItem -Path 'C:\Program Files\Microsoft Visual Studio' -Directory -Recurse -Depth 3 -ErrorAction SilentlyContinue | Select-Object FullName
+Get-ChildItem -Path 'C:\Program Files\Intel','C:\Program Files (x86)\Intel' -Recurse -Filter setvars.bat -ErrorAction SilentlyContinue | Select-Object FullName
+```
+
+如果安装的是 Visual Studio 2026 Community，本机常见路径类似：
+
+```bat
+set "VS2022INSTALLDIR=C:\Program Files\Microsoft Visual Studio\18\Community"
+
+call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+```
+
+`compile1.bat` 是本机专用脚本，不提交到仓库。
+
 ### 确定版本号
 
 将 `.nml` 文件命名为：`1.2.3@4.nml` 的形式，其中 @ 前的是代码版本号，@ 后的是该版本下的算例编号。

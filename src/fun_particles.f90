@@ -233,6 +233,7 @@ subroutine mover
     USE the_whole_varibles
     implicit none
     real*8:: B_mover(1:3),E_mover(1:3) !,xv(1:3)
+    integer :: ip_move
 
     call find_func_cputime_1_of_2  !-------------------1/2
     call find_x_to_grid
@@ -242,25 +243,28 @@ subroutine mover
     call find_func_cputime_1_of_2  !-------------------1/2
     expt=exp(-i*2*pi*frequency*t)
     expt2=exp(-i*2*pi*frequency2*t)
-    do ip=1,n_active
-        call interpolation_E_B(B_mover,E_mover)
-        call push_RK4(B_mover,E_mover)
+    !$omp parallel do default(shared) private(ip_move,B_mover,E_mover) schedule(static)
+    do ip_move=1,n_active
+        call interpolation_E_B(ip_move,B_mover,E_mover)
+        call push_RK4(ip_move,B_mover,E_mover)
     enddo
+    !$omp end parallel do
     call find_func_cputime_2_of_2(func_time(4))  !-----2/2
 end subroutine mover
 
 subroutine find_x_to_grid !here x means (x,y,z)
     USE the_whole_varibles
     implicit none
-    integer::ir_tp,iz_tp
+    integer::ir_tp,iz_tp,ip_grid
     real*8::rtp,ztp
 
     !r: s1= x_to_grid(1:n_active,1),s2=1-s1; z: s3= x_to_grid(1:n_active,2),s4=1-s3;
     x_to_grid(1:n_active,1:2)=0.0d0
     ir1_iz1_grid(1:n_active,1:2)=0
-    do ip=1,n_active
-        rtp=sqrt(x(ip,1)**2+x(ip,2)**2)
-        ztp=x(ip,3)
+    !$omp parallel do default(shared) private(ip_grid,ir_tp,iz_tp,rtp,ztp) schedule(static)
+    do ip_grid=1,n_active
+        rtp=sqrt(x(ip_grid,1)**2+x(ip_grid,2)**2)
+        ztp=x(ip_grid,3)
         if(isnan(rtp) .or. isnan(ztp))cycle
         if(rtp<r(1) .or. rtp>=r(nr) .or. ztp<z(1) .or. ztp>=z(nz))cycle
 
@@ -268,17 +272,19 @@ subroutine find_x_to_grid !here x means (x,y,z)
         iz_tp=int((ztp-z(1))/dz)+1
         if(ir_tp<1 .or. ir_tp>=nr .or. iz_tp<1 .or. iz_tp>=nz)cycle
 
-        ir1_iz1_grid(ip,1)=ir_tp
-        ir1_iz1_grid(ip,2)=iz_tp
-        x_to_grid(ip,1)=(rtp-r(ir_tp))/dr
-        x_to_grid(ip,2)=(ztp-z(iz_tp))/dz
+        ir1_iz1_grid(ip_grid,1)=ir_tp
+        ir1_iz1_grid(ip_grid,2)=iz_tp
+        x_to_grid(ip_grid,1)=(rtp-r(ir_tp))/dr
+        x_to_grid(ip_grid,2)=(ztp-z(iz_tp))/dz
     enddo
+    !$omp end parallel do
 end subroutine find_x_to_grid
 
-subroutine interpolation_E_B(B_mover,E_mover)
+subroutine interpolation_E_B(ip_arg,B_mover,E_mover)
     USE the_whole_varibles
     implicit none
-    INTEGER:: ir1,ir2,iz1,iz2
+    integer, intent(in) :: ip_arg
+    INTEGER:: ir1,ir2,iz1,iz2,m_loc
     INTEGER  :: ixtp,iytp
     real*8::sinth,costh,erthz(1:3),xtp,ytp,rtp,th_tp
     complex*16::c1_6(1:6),Em_tp(1:3)
@@ -294,19 +300,19 @@ subroutine interpolation_E_B(B_mover,E_mover)
     Es_dc=0.0d0
     Erf_cyl=0.0d0
 
-    rtp=sqrt(x(ip,1)**2+x(ip,2)**2)+1e-20;
-    xtp=x(ip,1)
-    ytp=x(ip,2)
+    rtp=sqrt(x(ip_arg,1)**2+x(ip_arg,2)**2)+1e-20;
+    xtp=x(ip_arg,1)
+    ytp=x(ip_arg,2)
     sinth=ytp/rtp
     costh=xtp/rtp
 
-    s1=x_to_grid(ip,1)*x_to_grid(ip,2)
-    s2=x_to_grid(ip,1)*(1.-x_to_grid(ip,2))
-    s3=(1.-x_to_grid(ip,1))*(1.-x_to_grid(ip,2))
-    s4=(1.-x_to_grid(ip,1))*x_to_grid(ip,2)
+    s1=x_to_grid(ip_arg,1)*x_to_grid(ip_arg,2)
+    s2=x_to_grid(ip_arg,1)*(1.-x_to_grid(ip_arg,2))
+    s3=(1.-x_to_grid(ip_arg,1))*(1.-x_to_grid(ip_arg,2))
+    s4=(1.-x_to_grid(ip_arg,1))*x_to_grid(ip_arg,2)
 
-    ir1=ir1_iz1_grid(ip,1)
-    iz1=ir1_iz1_grid(ip,2)
+    ir1=ir1_iz1_grid(ip_arg,1)
+    iz1=ir1_iz1_grid(ip_arg,2)
     ir2=ir1+1
     iz2=iz1+1
     if(ir1<1 .or. ir2>nr .or. iz1<1 .or. iz2>nz)return
@@ -324,12 +330,12 @@ subroutine interpolation_E_B(B_mover,E_mover)
 
     th_tp = atan2(ytp, xtp)
 
-    do m = m_start, m_end
-        Em_tp = s3*e_output(m,ir1,iz1,:) + s1*e_output(m,ir2,iz2,:) + &
-                s2*e_output(m,ir2,iz1,:) + s4*e_output(m,ir1,iz2,:)
-        
-        phase_factor = exp(cmplx(0.0d0, 1.0d0) * m * th_tp) !计算相位因子 e^(im*theta)
-        
+    do m_loc = m_start, m_end
+        Em_tp = s3*e_output(m_loc,ir1,iz1,:) + s1*e_output(m_loc,ir2,iz2,:) + &
+                s2*e_output(m_loc,ir2,iz1,:) + s4*e_output(m_loc,ir1,iz2,:)
+
+        phase_factor = exp(cmplx(0.0d0, 1.0d0) * m_loc * th_tp) !计算相位因子 e^(im*theta)
+
         c1_6(1:3) = c1_6(1:3) + Em_tp * phase_factor
     enddo
 
@@ -340,7 +346,7 @@ subroutine interpolation_E_B(B_mover,E_mover)
     
     !state_power_on_off  on->1;  0->off
     Erf_cyl(1:3)=state_power_on_off*(real(expt*c1_6(1:3))+real(expt2*c1_6(4:6)))
-    if(iswitch_cancel_Erf_before_peak==1 .and. x(ip,3)<zBPeak+1.0d-3)Erf_cyl=0.0d0
+    if(iswitch_cancel_Erf_before_peak==1 .and. x(ip_arg,3)<zBPeak+1.0d-3)Erf_cyl=0.0d0
     erthz(1:3)=Es_dc(1:3)+Erf_cyl(1:3)
 
     ! (r,th,z) ->(x,y,z)
@@ -415,48 +421,49 @@ subroutine interpolation_play_fields(B_mover,Erf_cart,Es_cart)
     Erf_cart(3)=Erf_cyl(3)
 end subroutine interpolation_play_fields
 
-subroutine push_RK4(B_mover,E_mover)
+subroutine push_RK4(ip_arg,B_mover,E_mover)
     USE the_whole_varibles
     implicit none
+    integer, intent(in) :: ip_arg
     real*8:: B_mover(1:3),E_mover(1:3) 
     real*8:: k1(1:6),k2(1:6),k3(1:6),k4(1:6)
     real*8:: xv(1:6)
 
 
     !find k1
-    xv(1:3)=x(ip,1:3)
-    xv(4:6)=v(ip,1:3)
+    xv(1:3)=x(ip_arg,1:3)
+    xv(4:6)=v(ip_arg,1:3)
     k1(1:3)=xv(4:6)
     k1(4)=q_mass_i*(E_mover(1)+xv(5)*B_mover(3)-xv(6)*B_mover(2));
     k1(5)=q_mass_i*(E_mover(2)+xv(6)*B_mover(1)-xv(4)*B_mover(3))
     k1(6)=q_mass_i*(E_mover(3)+xv(4)*B_mover(2)-xv(5)*B_mover(1))
 
     !find k2
-    xv(1:3)=x(ip,1:3)+dt*0.5*k1(1:3)
-    xv(4:6)=v(ip,1:3)+dt*0.5*k1(4:6)
+    xv(1:3)=x(ip_arg,1:3)+dt*0.5*k1(1:3)
+    xv(4:6)=v(ip_arg,1:3)+dt*0.5*k1(4:6)
     k2(1:3)=xv(4:6)
     k2(4)=q_mass_i*(E_mover(1)+xv(5)*B_mover(3)-xv(6)*B_mover(2));
     k2(5)=q_mass_i*(E_mover(2)+xv(6)*B_mover(1)-xv(4)*B_mover(3))
     k2(6)=q_mass_i*(E_mover(3)+xv(4)*B_mover(2)-xv(5)*B_mover(1))
 
     !find k3
-    xv(1:3)=x(ip,1:3)+dt*0.5*k2(1:3)
-    xv(4:6)=v(ip,1:3)+dt*0.5*k2(4:6)
+    xv(1:3)=x(ip_arg,1:3)+dt*0.5*k2(1:3)
+    xv(4:6)=v(ip_arg,1:3)+dt*0.5*k2(4:6)
     k3(1:3)=xv(4:6)
     k3(4)=q_mass_i*(E_mover(1)+xv(5)*B_mover(3)-xv(6)*B_mover(2));
     k3(5)=q_mass_i*(E_mover(2)+xv(6)*B_mover(1)-xv(4)*B_mover(3))
     k3(6)=q_mass_i*(E_mover(3)+xv(4)*B_mover(2)-xv(5)*B_mover(1))
 
     !find k4
-    xv(1:3)=x(ip,1:3)+dt*k3(1:3)
-    xv(4:6)=v(ip,1:3)+dt*k3(4:6)
+    xv(1:3)=x(ip_arg,1:3)+dt*k3(1:3)
+    xv(4:6)=v(ip_arg,1:3)+dt*k3(4:6)
     k4(1:3)=xv(4:6)
     k4(4)=q_mass_i*(E_mover(1)+xv(5)*B_mover(3)-xv(6)*B_mover(2));
     k4(5)=q_mass_i*(E_mover(2)+xv(6)*B_mover(1)-xv(4)*B_mover(3))
     k4(6)=q_mass_i*(E_mover(3)+xv(4)*B_mover(2)-xv(5)*B_mover(1))
 
-    x(ip,1:3)=x(ip,1:3)+dt/6.*(k1(1:3)+2.*k2(1:3)+2.*k3(1:3)+k4(1:3))
-    v(ip,1:3)=v(ip,1:3)+dt/6.*(k1(4:6)+2.*k2(4:6)+2.*k3(4:6)+k4(4:6))
+    x(ip_arg,1:3)=x(ip_arg,1:3)+dt/6.*(k1(1:3)+2.*k2(1:3)+2.*k3(1:3)+k4(1:3))
+    v(ip_arg,1:3)=v(ip_arg,1:3)+dt/6.*(k1(4:6)+2.*k2(4:6)+2.*k3(4:6)+k4(4:6))
 end subroutine push_RK4
 
 subroutine find_density_and_Es_2D
@@ -577,7 +584,8 @@ subroutine density_Ek_2D_sub
     implicit none
     real*8::sinth,costh,rtp,ur_tp
     real*8::s1,s2,s3,s4,vtp2
-    integer::ir2,ir1,iz2,iz1
+    integer::ir2,ir1,iz2,iz1,ip_dep
+    real*8, allocatable :: density_loc(:,:), Ek_ion_loc(:,:), Ek_ion_r_loc(:,:), u_pic_loc(:,:,:)
 
     density_2D=0.2 !set a small value to avoid zero or very small density
     Ek_ion_2D=0.
@@ -592,50 +600,70 @@ subroutine density_Ek_2D_sub
     !   x(r,z)
     !  |s1| |s2|
 
-    do ip=1,n_active
-        ir1=ir1_iz1_grid(ip,1)
-        iz1=ir1_iz1_grid(ip,2)
+    !$omp parallel default(shared) private(ip_dep,ir1,ir2,iz1,iz2,s1,s2,s3,s4,vtp2,rtp,sinth,costh,ur_tp) &
+    !$omp& private(density_loc,Ek_ion_loc,Ek_ion_r_loc,u_pic_loc)
+    allocate(density_loc(1:nr,1:nz), Ek_ion_loc(1:nr,1:nz), Ek_ion_r_loc(1:nr,1:nz), u_pic_loc(1:nr,1:nz,1:2))
+    density_loc=0.0d0
+    Ek_ion_loc=0.0d0
+    Ek_ion_r_loc=0.0d0
+    u_pic_loc=0.0d0
+
+    !$omp do schedule(static)
+    do ip_dep=1,n_active
+        ir1=ir1_iz1_grid(ip_dep,1)
+        iz1=ir1_iz1_grid(ip_dep,2)
         ir2=ir1+1
         iz2=iz1+1
         if(ir1<1 .or. ir2>nr .or. iz1<1 .or. iz2>nz)cycle
 
-        s1=x_to_grid(ip,1)*x_to_grid(ip,2)
-        s2=x_to_grid(ip,1)*(1.-x_to_grid(ip,2))
-        s3=(1.-x_to_grid(ip,1))*(1.-x_to_grid(ip,2))
-        s4=(1.-x_to_grid(ip,1))*x_to_grid(ip,2)
+        s1=x_to_grid(ip_dep,1)*x_to_grid(ip_dep,2)
+        s2=x_to_grid(ip_dep,1)*(1.-x_to_grid(ip_dep,2))
+        s3=(1.-x_to_grid(ip_dep,1))*(1.-x_to_grid(ip_dep,2))
+        s4=(1.-x_to_grid(ip_dep,1))*x_to_grid(ip_dep,2)
 
-        density_2D(ir1,iz1)=density_2D(ir1,iz1)+s3
-        density_2D(ir2,iz2)=density_2D(ir2,iz2)+s1
-        density_2D(ir2,iz1)=density_2D(ir2,iz1)+s2
-        density_2D(ir1,iz2)=density_2D(ir1,iz2)+s4
+        density_loc(ir1,iz1)=density_loc(ir1,iz1)+s3
+        density_loc(ir2,iz2)=density_loc(ir2,iz2)+s1
+        density_loc(ir2,iz1)=density_loc(ir2,iz1)+s2
+        density_loc(ir1,iz2)=density_loc(ir1,iz2)+s4
 
-        vtp2=mass_q_i_05*(v(ip,1)**2+v(ip,2)**2+v(ip,3)**2)
-        Ek_ion_2D(ir1,iz1)=Ek_ion_2D(ir1,iz1)+s3*vtp2
-        Ek_ion_2D(ir2,iz2)=Ek_ion_2D(ir2,iz2)+s1*vtp2
-        Ek_ion_2D(ir2,iz1)=Ek_ion_2D(ir2,iz1)+s2*vtp2
-        Ek_ion_2D(ir1,iz2)=Ek_ion_2D(ir1,iz2)+s4*vtp2
+        vtp2=mass_q_i_05*(v(ip_dep,1)**2+v(ip_dep,2)**2+v(ip_dep,3)**2)
+        Ek_ion_loc(ir1,iz1)=Ek_ion_loc(ir1,iz1)+s3*vtp2
+        Ek_ion_loc(ir2,iz2)=Ek_ion_loc(ir2,iz2)+s1*vtp2
+        Ek_ion_loc(ir2,iz1)=Ek_ion_loc(ir2,iz1)+s2*vtp2
+        Ek_ion_loc(ir1,iz2)=Ek_ion_loc(ir1,iz2)+s4*vtp2
 
-        vtp2=mass_q_i_05*(v(ip,1)**2+v(ip,2)**2)
-        Ek_ion_2D_r(ir1,iz1)=Ek_ion_2D_r(ir1,iz1)+s3*vtp2
-        Ek_ion_2D_r(ir2,iz2)=Ek_ion_2D_r(ir2,iz2)+s1*vtp2
-        Ek_ion_2D_r(ir2,iz1)=Ek_ion_2D_r(ir2,iz1)+s2*vtp2
-        Ek_ion_2D_r(ir1,iz2)=Ek_ion_2D_r(ir1,iz2)+s4*vtp2
+        vtp2=mass_q_i_05*(v(ip_dep,1)**2+v(ip_dep,2)**2)
+        Ek_ion_r_loc(ir1,iz1)=Ek_ion_r_loc(ir1,iz1)+s3*vtp2
+        Ek_ion_r_loc(ir2,iz2)=Ek_ion_r_loc(ir2,iz2)+s1*vtp2
+        Ek_ion_r_loc(ir2,iz1)=Ek_ion_r_loc(ir2,iz1)+s2*vtp2
+        Ek_ion_r_loc(ir1,iz2)=Ek_ion_r_loc(ir1,iz2)+s4*vtp2
 
-        rtp=sqrt(x(ip,1)**2+x(ip,2)**2)+1e-20;
-        sinth=x(ip,2)/rtp
-        costh=x(ip,1)/rtp
-        ur_tp=v(ip,1)*costh+v(ip,2)*sinth
-        u_pic(ir1,iz1,1)=u_pic(ir1,iz1,1)+s3*ur_tp
-        u_pic(ir2,iz2,1)=u_pic(ir2,iz2,1)+s1*ur_tp
-        u_pic(ir2,iz1,1)=u_pic(ir2,iz1,1)+s2*ur_tp
-        u_pic(ir1,iz2,1)=u_pic(ir1,iz2,1)+s4*ur_tp
+        rtp=sqrt(x(ip_dep,1)**2+x(ip_dep,2)**2)+1e-20;
+        sinth=x(ip_dep,2)/rtp
+        costh=x(ip_dep,1)/rtp
+        ur_tp=v(ip_dep,1)*costh+v(ip_dep,2)*sinth
+        u_pic_loc(ir1,iz1,1)=u_pic_loc(ir1,iz1,1)+s3*ur_tp
+        u_pic_loc(ir2,iz2,1)=u_pic_loc(ir2,iz2,1)+s1*ur_tp
+        u_pic_loc(ir2,iz1,1)=u_pic_loc(ir2,iz1,1)+s2*ur_tp
+        u_pic_loc(ir1,iz2,1)=u_pic_loc(ir1,iz2,1)+s4*ur_tp
 
-        u_pic(ir1,iz1,2)=u_pic(ir1,iz1,2)+s3*v(ip,3)
-        u_pic(ir2,iz2,2)=u_pic(ir2,iz2,2)+s1*v(ip,3)
-        u_pic(ir2,iz1,2)=u_pic(ir2,iz1,2)+s2*v(ip,3)
-        u_pic(ir1,iz2,2)=u_pic(ir1,iz2,2)+s4*v(ip,3)
+        u_pic_loc(ir1,iz1,2)=u_pic_loc(ir1,iz1,2)+s3*v(ip_dep,3)
+        u_pic_loc(ir2,iz2,2)=u_pic_loc(ir2,iz2,2)+s1*v(ip_dep,3)
+        u_pic_loc(ir2,iz1,2)=u_pic_loc(ir2,iz1,2)+s2*v(ip_dep,3)
+        u_pic_loc(ir1,iz2,2)=u_pic_loc(ir1,iz2,2)+s4*v(ip_dep,3)
 
     enddo
+    !$omp end do
+
+    !$omp critical
+    density_2D=density_2D+density_loc
+    Ek_ion_2D=Ek_ion_2D+Ek_ion_loc
+    Ek_ion_2D_r=Ek_ion_2D_r+Ek_ion_r_loc
+    u_pic=u_pic+u_pic_loc
+    !$omp end critical
+
+    deallocate(density_loc, Ek_ion_loc, Ek_ion_r_loc, u_pic_loc)
+    !$omp end parallel
     !Ek_ion_2D must be divided by the density without column coordinate coefficients (2pi*rdr)
     Ek_ion_2D=Ek_ion_2D/density_2D; 
     Ek_ion_2D_r=Ek_ion_2D_r/density_2D;
@@ -684,6 +712,7 @@ subroutine smooth_2d(n_smr,n_smz,nr_sta,nr_end,nz_sta,nz_end,data_in)
     ir_reg2=nr_end-n_smr
     iz_reg1=n_smz+nz_sta-1
     iz_reg2=nz_end-n_smz
+    !$omp parallel do default(shared) private(ir_sm,iz_sm,k1,k2,k3,k4,n_total) collapse(2) schedule(static)
     do ir_sm=nr_sta,nr_end
         do iz_sm=nz_sta,nz_end
             if( ir_sm<=ir_reg1)then
@@ -708,6 +737,7 @@ subroutine smooth_2d(n_smr,n_smz,nr_sta,nr_end,nz_sta,nz_end,data_in)
             data_out(ir_sm,iz_sm)=sum(data_in(k1:k2,k3:k4))/n_total
         enddo
     enddo
+    !$omp end parallel do
 
     data_in=data_out;
 
@@ -952,7 +982,7 @@ subroutine play_trajectory
                 B_play,Erf_play,Es_play,force_lorentz,force_total, &
                 dW_Erf,dW_Es,dW_Erf+dW_Es
 
-            call push_RK4(B_play,E_total)
+            call push_RK4(ip,B_play,E_total)
         enddo
 
         if(i_step>=n_inject_steps .and. n_active<=0)exit
@@ -1150,6 +1180,7 @@ subroutine find_power
     implicit none
     real*8 :: Ek_i_total, Ek_e_total
     real*8 :: Ek_loss_interval_joules, Ek_inject_interval_joules, energy_gain_interval
+    integer :: ip_power
 
     if(mod(t,10.*trf)<dt)then
         Ek_loss_interval_joules = sum(Ek_loss_tol(1:4)) * n_macro * qe_abs
@@ -1161,9 +1192,11 @@ subroutine find_power
         Ek_loss_cumulative = Ek_loss_cumulative + sum(Ek_loss_tol(1:4))
         
         Ek_i_total = 0.0
-        do ip=1,n_active
-            Ek_i_total = Ek_i_total + mass_q_i_05*sum(v(ip,1:3)**2)
+        !$omp parallel do default(shared) private(ip_power) reduction(+:Ek_i_total) schedule(static)
+        do ip_power=1,n_active
+            Ek_i_total = Ek_i_total + mass_q_i_05*sum(v(ip_power,1:3)**2)
         enddo
+        !$omp end parallel do
         Ek_e_total = mass_q_e_05 * sum(v_e(1:n_active,1:3)**2)
         Ek_total_current_joules = (Ek_i_total + Ek_e_total) * n_macro * qe_abs
 

@@ -909,6 +909,7 @@ end subroutine quicksort
 
 subroutine complex_coo_pardiso_solve(A,x_plasma,B_rf)
     use types
+    use omp_lib
     IMPLICIT NONE
     type(sparse_complex) :: A
     Complex*16 :: x_plasma(A.n),B_rf(A.n)
@@ -924,7 +925,7 @@ subroutine complex_coo_pardiso_solve(A,x_plasma,B_rf)
     !maxfct=1;mnum=1;mtype=13;phase=13;nrhs=1;msglvl=0
     !call pardisoinit(pt, mtype, iparm)
     maxfct=1;mnum=1;mtype=13;phase=13;nrhs=1;iparm(:)=0;msglvl=0;pt(:)=0
-    iparm(3)=4 !OMP_NUM_THREADS
+    iparm(3)=omp_get_max_threads()
     call pardiso(pt,maxfct,mnum,mtype,phase,A_csr3.n,A_csr3.val,A_csr3.row,A_csr3.col,perm,nrhs,iparm,msglvl,B_rf,x_plasma,error)
     ! 释放 pardiso 内部内存(否则每次求解都泄漏因子内存，累积耗尽内存崩溃)
     phase=-1

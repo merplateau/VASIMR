@@ -487,7 +487,7 @@ subroutine rec_time_trajectory
 
     if(mod(t,t_rec_trajectory)<dt )then
         ip=1
-        call interpolation_E_B(B_mover,E_mover)
+        call interpolation_E_B(ip,B_mover,E_mover)
         xtp=x(ip,1)
         ytp=x(ip,2)
         rtp=sqrt(xtp**2+ytp**2)+1e-20

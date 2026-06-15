@@ -913,15 +913,22 @@ end subroutine mkdir_if_not_exist
 subroutine mkdir_one_dir(dir_name)
     implicit none
     character(len=*), intent(in) :: dir_name
-    logical :: dirExists
     integer :: cmdstat
-    character(len=600) :: cmd
+    integer :: n
+    character(len=600) :: cmd, dir_path, probe_path
 
-    inquire(file=trim(dir_name), exist=dirExists)
-    if (.not. dirExists) then
-        cmd = 'mkdir "' // trim(dir_name) // '"'
-        call execute_command_line(trim(cmd), exitstat=cmdstat)
+    dir_path = trim(dir_name)
+    n = len_trim(dir_path)
+    if(n<=0)return
+
+    if(dir_path(n:n)=='\' .or. dir_path(n:n)=='/')then
+        probe_path = trim(dir_path)//'.'
+    else
+        probe_path = trim(dir_path)//'\.'
     end if
+
+    cmd = 'cmd /c if not exist "' // trim(probe_path) // '" (mkdir "' // trim(dir_path) // '") else (ver >nul)'
+    call execute_command_line(trim(cmd), exitstat=cmdstat)
 end subroutine mkdir_one_dir
 
 subroutine setRec

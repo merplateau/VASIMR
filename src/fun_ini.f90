@@ -927,7 +927,7 @@ subroutine mkdir_one_dir(dir_name)
         probe_path = trim(dir_path)//'\.'
     end if
 
-    cmd = 'cmd /c if not exist "' // trim(probe_path) // '" (mkdir "' // trim(dir_path) // '") else (ver >nul)'
+    cmd = 'if not exist "' // trim(probe_path) // '" mkdir "' // trim(dir_path) // '"'
     call execute_command_line(trim(cmd), exitstat=cmdstat)
 end subroutine mkdir_one_dir
 

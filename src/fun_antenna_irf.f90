@@ -294,6 +294,7 @@ subroutine update_and_calculate
 
     power_depo_2D=irf_tmp*irf_tmp*power_depo_2D
     power_depo_rthz=irf_tmp*irf_tmp*power_depo_rthz
+    power_depo_species_m=irf_tmp*irf_tmp*power_depo_species_m
     ptotm=irf_tmp*irf_tmp*ptotm
     ptotal=irf_tmp*irf_tmp*ptotal
     ptotal_boundary=irf_tmp*irf_tmp*ptotal_boundary

@@ -135,10 +135,10 @@ subroutine antenna
             ja_m_nor(nra:nra1,nz1:nz2,3)=0;
         else
             !----------z=z1---------!
-            ja_m_nor(nra:nra1,nz1m:nz1m1,2)=j_loop_nor*(1-exp(-imp))/(2*imp)
+            ja_m_nor(nra:nra1,nz1m:nz1m1,2)=j_loop_nor*(1-exp(-imp))/(4*imp)
             !----------z=z2---------!
-            if(iswitch_antenna_type /= 3) ja_m_nor(nra:nra1,nz2p1:nz2p,2)=j_loop_nor*(1-exp(-imp))/(2*imp)
-            if(iswitch_antenna_type == 3) ja_m_nor(nra:nra1,nz2p1:nz2p,2)=-j_loop_nor*(1-exp(-imp))/(2*imp)
+            if(iswitch_antenna_type /= 3) ja_m_nor(nra:nra1,nz2p1:nz2p,2)=j_loop_nor*(1-exp(-imp))/(4*imp)
+            if(iswitch_antenna_type == 3) ja_m_nor(nra:nra1,nz2p1:nz2p,2)=-j_loop_nor*(1-exp(-imp))/(4*imp)
 
             !----------z1<z<z2---------!
             c1=im*width_th/(2*ra)

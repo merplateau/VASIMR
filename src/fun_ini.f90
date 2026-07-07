@@ -78,7 +78,8 @@ subroutine initialize
     namelist /configBaffle/ &
         & iswitch_zBaffle, &
         & zBaffle, &
-        & dzBaffle
+        & dzBaffle, &
+        & rBaffle
     
 
     call start_ftime
@@ -92,6 +93,7 @@ subroutine initialize
     iswitch_zBaffle=0
     zBaffle=-0.08d0
     dzBaffle=0.01d0
+    rBaffle=-1.0d0
     convergeGateCV=3.0d0
     convergeGateS=3.0d0
     convergeGateTrf=80
@@ -375,15 +377,17 @@ subroutine setup_baffle
 
     if(dzBaffle<=0.0d0)dzBaffle=dz
     zBaffle=max(zs,min(zd,zBaffle))
+    if(rBaffle<0.0d0)rBaffle=rp
+    rBaffle=max(rs,min(rd,rBaffle))
 
     call find_baffle_z_indices(iz_b1,iz_b2)
     if(iswitch_display/=0)then
         if(iswitch_zBaffle==0)then
-            write(*,"('Baffle enabled: auto zBaffle = ',f10.5,' m, dzBaffle = ',f10.5,' m, iz = ',i0,'...',i0)") &
-                zBaffle,dzBaffle,iz_b1,iz_b2
+            write(*,"('Baffle: auto z=',f10.5,' m, dz=',f10.5,' m, r=',f10.5,' m, iz=',i0,'...',i0)") &
+                zBaffle,dzBaffle,rBaffle,iz_b1,iz_b2
         else
-            write(*,"('Baffle enabled: nml  zBaffle = ',f10.5,' m, dzBaffle = ',f10.5,' m, iz = ',i0,'...',i0)") &
-                zBaffle,dzBaffle,iz_b1,iz_b2
+            write(*,"('Baffle: nml  z=',f10.5,' m, dz=',f10.5,' m, r=',f10.5,' m, iz=',i0,'...',i0)") &
+                zBaffle,dzBaffle,rBaffle,iz_b1,iz_b2
         endif
     endif
 end subroutine setup_baffle

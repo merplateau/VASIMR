@@ -25,7 +25,20 @@ subroutine antenna
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=antennaCOnfig)
     close(nmlid)
-    if(spacing_th<=0.D0) spacing_th=width_th
+    if(iswitch_antenna_type==11)then
+        if(spacing_th<=0.D0)then
+            write(*,*) 'FATAL ERROR: antenna type 11 requires spacing_th in antennaConfig.'
+            stop 19
+        endif
+        if(spacing_th<=width_th)then
+            write(*,*) 'FATAL ERROR: antenna type 11 requires spacing_th > width_th.'
+            stop 20
+        endif
+        if(spacing_th>=pi*ra)then
+            write(*,*) 'FATAL ERROR: antenna type 11 requires spacing_th < pi*ra.'
+            stop 21
+        endif
+    endif
 
     !1-on  0-off: another antenna (f=frequency) symmetrical to the main antenna.
     iswitch_right_antenna=0;
@@ -36,7 +49,7 @@ subroutine antenna
     !width_r=0.01 !@namelist
     !width_z=0.04 !@namelist
     !width_th=width_z; !@namelist
-    !spacing_th=width_th; !@namelist, optional for iswitch_antenna_type=11
+    !spacing_th: centerline arc spacing, required for iswitch_antenna_type=11
     !la=0.1 !@namelist
     !---only for helical and Nagoya antenna---!
 

@@ -520,6 +520,7 @@ subroutine record_profiles
     implicit none
     real*8 :: Es_z(1:nz)
     real*8, allocatable, save :: density_in_z(:),ek_ave(:,:)
+    real*8, allocatable, save :: particle_count_z(:,:),ek_total_z(:,:,:)
     integer*4, save :: trigger=0
     integer*4, save :: acc_number=0
     call find_func_cputime_1_of_2  !-------------------1/2
@@ -527,8 +528,12 @@ subroutine record_profiles
     if(.not. allocated(density_in_z))then
         allocate(density_in_z(1:nz))
         allocate(ek_ave(1:nz,1:3))
+        allocate(particle_count_z(1:nz,1:2))
+        allocate(ek_total_z(1:nz,1:2,1:3))
         density_in_z=0.
         ek_ave=0.
+        particle_count_z=0.
+        ek_total_z=0.
         acc_number=0
         trigger=0
     endif
@@ -541,9 +546,12 @@ subroutine record_profiles
         acc_number=0
         ek_ave=0.
         density_in_z=0.
+        particle_count_z=0.
+        ek_total_z=0.
     endif
 
     call find_Ek_1D_new(density_in_z,ek_ave,acc_number,trigger)
+    call find_Ek_total_1D_new(particle_count_z,ek_total_z,trigger)
 
 
     ! main program for profile recording
@@ -556,7 +564,9 @@ subroutine record_profiles
         if (rec_plasma == 1) call record_profile_plasma
         if (rec_rf_field == 1) call record_profile_rf_field
         call prepare_record_profile_Ek_ave_z(density_in_z,ek_ave,Es_z,acc_number,trigger)
+        call prepare_record_profile_Ek_total_z(particle_count_z,ek_total_z,acc_number)
         if (rec_Ek_ave_z == 1) call record_profile_Ek_ave_z(density_in_z,ek_ave,Es_z)
+        if (rec_Ek_ave_z == 1) call record_profile_Ek_total_z(particle_count_z,ek_total_z)
         if (rec_ions_rz == 1) call record_profile_ion_rz
         if (rec_density_Es_2D == 1) call record_profile_density_Es_2D
         if (rec_Erf_all_m == 1) call record_profile_Erf_all_m
@@ -650,6 +660,45 @@ subroutine record_profile_Ek_ave_z(density_in_z,ek_ave,Es_z)
     write (22,322)Es_z
     close(22)
 end subroutine record_profile_Ek_ave_z
+
+subroutine prepare_record_profile_Ek_total_z(particle_count_z,ek_total_z,acc_number)
+    USE the_whole_varibles
+    implicit none
+    real*8 :: particle_count_z(1:nz,1:2),ek_total_z(1:nz,1:2,1:3)
+    integer*4 :: acc_number
+
+    if(acc_number>0)then
+        particle_count_z=particle_count_z/(real(acc_number))
+        ek_total_z=ek_total_z/(real(acc_number))
+    else
+        call find_Ek_total_1D(particle_count_z,ek_total_z)
+    endif
+end subroutine prepare_record_profile_Ek_total_z
+
+subroutine record_profile_Ek_total_z(particle_count_z,ek_total_z)
+    USE the_whole_varibles
+    implicit none
+    real*8 :: particle_count_z(1:nz,1:2),ek_total_z(1:nz,1:2,1:3)
+    character*30 fname
+    character*256 fullpath
+
+322 format(<nz>(e12.5,' '))
+129 format('Ek_total_z_',i0,'.dat')
+
+    write (fname,129)ifig
+    fullpath=trim(outputDir)//trim(fname)
+    open (unit=29,file=fullpath,status='unknown',iostat=ierror)
+    write (29,322)z
+    write (29,322)particle_count_z(:,1)
+    write (29,322)particle_count_z(:,2)
+    write (29,322)ek_total_z(:,1,1)
+    write (29,322)ek_total_z(:,1,2)
+    write (29,322)ek_total_z(:,1,3)
+    write (29,322)ek_total_z(:,2,1)
+    write (29,322)ek_total_z(:,2,2)
+    write (29,322)ek_total_z(:,2,3)
+    close(29)
+end subroutine record_profile_Ek_total_z
 
 subroutine record_profile_ion_rz
     USE the_whole_varibles
@@ -882,6 +931,77 @@ subroutine find_Ek_1D_new(density_x,ek_x,acc_number,trigger) !,x_p,v_innz,np_max
     
     endif
 end subroutine find_Ek_1D_new
+
+subroutine find_Ek_total_1D(particle_count_x,ek_total_x)
+    USE the_whole_varibles
+    implicit none
+    real*8 :: particle_count_x(1:nz,1:2),ek_total_x(1:nz,1:2,1:3)
+
+    particle_count_x=0.
+    ek_total_x=0.
+    call accumulate_Ek_total_1D(particle_count_x,ek_total_x)
+end subroutine find_Ek_total_1D
+
+subroutine find_Ek_total_1D_new(particle_count_x,ek_total_x,trigger)
+    USE the_whole_varibles
+    implicit none
+    real*8 :: particle_count_x(1:nz,1:2),ek_total_x(1:nz,1:2,1:3)
+    real*8 :: particle_count_inter(1:nz,1:2),ek_total_inter(1:nz,1:2,1:3)
+    integer*4 :: trigger
+
+    if(trigger == 1) then
+        particle_count_inter=0.
+        ek_total_inter=0.
+        call accumulate_Ek_total_1D(particle_count_inter,ek_total_inter)
+        particle_count_x=particle_count_x+particle_count_inter
+        ek_total_x=ek_total_x+ek_total_inter
+    endif
+end subroutine find_Ek_total_1D_new
+
+subroutine accumulate_Ek_total_1D(particle_count_x,ek_total_x)
+    USE the_whole_varibles
+    implicit none
+    integer::ix1,ix2,I_x,dir_idx
+    real*8 :: particle_count_x(1:nz,1:2),ek_total_x(1:nz,1:2,1:3)
+    real*8::xtp,s1,s2,min_x,dx_tp1,ekz,ekxy,ekt
+
+    do ip=1,n_active
+        xtp=x(ip,3)
+        I_x=minloc(abs(xtp-z),1);
+        min_x=xtp-z(I_x);
+        if (min_x<0)then
+            ix1=I_x-1;
+            ix2=I_x;
+        else
+            ix1=I_x;
+            ix2=I_x+1;
+        endif
+        if(ix1<1)ix1=1
+        if(ix2>nz)ix2=nz
+        dx_tp1=abs(xtp-z(ix1)); !note abs()
+        s1=dx_tp1/dz;
+        s2=1.-s1;
+
+        if(v(ip,3)>=0.D0)then
+            dir_idx=1
+        else
+            dir_idx=2
+        endif
+
+        ekz=mass_q_i_05*v(ip,3)**2
+        ekxy=mass_q_i_05*(v(ip,1)**2+v(ip,2)**2)
+        ekt=ekxy+ekz
+
+        particle_count_x(ix1,dir_idx)=particle_count_x(ix1,dir_idx)+s2
+        particle_count_x(ix2,dir_idx)=particle_count_x(ix2,dir_idx)+s1
+        ek_total_x(ix1,dir_idx,1)=ek_total_x(ix1,dir_idx,1)+s2*ekz
+        ek_total_x(ix2,dir_idx,1)=ek_total_x(ix2,dir_idx,1)+s1*ekz
+        ek_total_x(ix1,dir_idx,2)=ek_total_x(ix1,dir_idx,2)+s2*ekxy
+        ek_total_x(ix2,dir_idx,2)=ek_total_x(ix2,dir_idx,2)+s1*ekxy
+        ek_total_x(ix1,dir_idx,3)=ek_total_x(ix1,dir_idx,3)+s2*ekt
+        ek_total_x(ix2,dir_idx,3)=ek_total_x(ix2,dir_idx,3)+s1*ekt
+    enddo
+end subroutine accumulate_Ek_total_1D
 
 subroutine start_ftime
     USE the_whole_varibles

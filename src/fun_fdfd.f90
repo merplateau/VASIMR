@@ -1204,6 +1204,18 @@ subroutine find_baffle_z_indices(iz_b1,iz_b2)
     iz_b2=max(1,min(nz,iz_b2))
 end subroutine find_baffle_z_indices
 
+subroutine find_baffle_r_indices(iv,ir_b1,ir_b2)
+    use the_whole_varibles
+    implicit none
+    integer*4 :: iv,ir_b1,ir_b2
+    real*8 :: rb_inner
+
+    rb_inner=max(rs,min(r_met(iv),rBaffle))
+    ir_b1=nint(real(nr)*real((rb_inner-rs)/rl))
+    ir_b1=max(1,min(nr,ir_b1))
+    ir_b2=max(1,min(nr,nr_met(iv)))
+end subroutine find_baffle_r_indices
+
 subroutine apply_baffle_dielectric
     use the_whole_varibles
     implicit none
@@ -1214,8 +1226,9 @@ subroutine apply_baffle_dielectric
     if(iz_b2-iz_b1<2)return
 
     do iv=1,n_vac
-        ir_b1=max(1,min(nr,nr_vac(iv)+1))
-        ir_b2=max(1,min(nr,nr_met(iv)-1))
+        call find_baffle_r_indices(iv,ir_b1,ir_b2)
+        ir_b1=max(1,min(nr,ir_b1+1))
+        ir_b2=max(1,min(nr,ir_b2-1))
         if(ir_b2<ir_b1)cycle
         do iz_b=iz_b1+1,iz_b2-1
             do ir_b=ir_b1,ir_b2
@@ -1313,8 +1326,7 @@ subroutine Find_Region(nr,nz,n_vac,nr_vac,nr_met,nz_vac,FindRegion)
     if(iswitch_baffle==1)then
         call find_baffle_z_indices(iz_b1,iz_b2)
         do nn=1,n_vac
-            ir_b1=max(1,min(nr,nr_vac(nn)))
-            ir_b2=max(1,min(nr,nr_met(nn)))
+            call find_baffle_r_indices(nn,ir_b1,ir_b2)
             if(ir_b2<ir_b1)cycle
             F1(ir_b1:ir_b2,iz_b1)=11
             F1(ir_b1:ir_b2,iz_b2)=11

@@ -99,7 +99,7 @@ module the_whole_varibles
     real*8 :: irf_mean,n_mean=1
     real*8 :: rp,zp,d2r,d2z
     real*8 :: dr,dz,rs,rd,rl,zs,zd,zl,ra,za,r1,drz,dr22,dz22,dr_2,dz_2
-    real*8 :: zBaffle=-0.08d0, dzBaffle=0.01d0, zBPeak=0.0d0
+    real*8 :: zBaffle=-0.08d0, dzBaffle=0.01d0, rBaffle=-1.0d0, zBPeak=0.0d0
     real*8 :: tp1,tp2,tp3
     real*8, allocatable :: r(:),z(:),r2(:)
     real*8, allocatable :: r_vac(:),r_met(:) ,z_vac(:)

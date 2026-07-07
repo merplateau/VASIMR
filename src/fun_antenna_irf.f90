@@ -1,11 +1,12 @@
 subroutine antenna
     use the_whole_varibles
     implicit none
-    real*8:: width_r,width_th,width_z,la,ra_p,z1_m,z2_p,elth,elz
+    real*8:: width_r,width_th,width_z,spacing_th,la,ra_p,z1_m,z2_p,elth,elz
     real*8:: z1,z2,z3,z4,ra1
     real*8:: sq_rz,sq_rth,j_loop,j_helical
+    real*8:: alpha,beta,band_factor,end_sinc
     integer::nz1m,nz2p1,nz2p,nz1m1,nrz_dz,nrz_dr,nz1,nz2,nz3,nz4,nra1
-    complex*16 ::c1,c2
+    complex*16 ::c1,c2,end_factor
     real*8 :: j_loop_nor,j_helical_nor !ja_value_nor,
     integer iswitch_right_antenna,nz1_right,nz2_right
     integer :: nmlid
@@ -16,11 +17,15 @@ subroutine antenna
         & width_r, &
         & width_z, &
         & width_th, &
+        & spacing_th, &
         & la
-    
+
+    spacing_th=-1.0D0
+
     open(newunit=nmlid, file=trim(nmlfile), status="old")
     read(nmlid, nml=antennaCOnfig)
     close(nmlid)
+    if(spacing_th<=0.D0) spacing_th=width_th
 
     !1-on  0-off: another antenna (f=frequency) symmetrical to the main antenna.
     iswitch_right_antenna=0;
@@ -31,6 +36,7 @@ subroutine antenna
     !width_r=0.01 !@namelist
     !width_z=0.04 !@namelist
     !width_th=width_z; !@namelist
+    !spacing_th=width_th; !@namelist, optional for iswitch_antenna_type=11
     !la=0.1 !@namelist
     !---only for helical and Nagoya antenna---!
 
@@ -174,6 +180,37 @@ subroutine antenna
 
         endif
     endif
+
+    !-----Dual-strip right helical antenna----------!
+    if(iswitch_antenna_type==11)then
+        if (m/=0 .and. mod(abs(m),2)==1) then
+            c1=im*width_th/(2*ra)
+            alpha=spacing_th/ra
+            beta=pi-alpha
+            band_factor=2.D0*cos(dble(m)*alpha/2.D0)
+
+            end_factor=0.D0
+            if(abs(beta)>1.D-12)then
+                end_sinc=sin(dble(m)*beta/2.D0)/(dble(m)*beta/2.D0)
+                end_factor=(beta/(2.D0*pi))*end_sinc*exp(-im*(pi+alpha)/2.D0)*(exp(-imp)-1.D0)
+            endif
+
+            !----------z=z1 & z=z2 end arcs---------!
+            ja_m_nor(nra:nra1,nz1m:nz1m1,2)=j_loop_nor*end_factor
+            ja_m_nor(nra:nra1,nz2p1:nz2p,2)=j_loop_nor*end_factor
+
+            !----------z1<z<z2 helical strips---------!
+            do ir=nra,nra1
+                do iz=nz1,nz2
+                    c2=band_factor*j_helical_nor/elz*(1-exp(-imp))*exp(-imp*(z(iz)-z1)/la) &
+                        & *( exp(-c1)-exp(c1)  )/(2*imp)
+                    ja_m_nor(ir,iz,2)=elth*c2
+                    ja_m_nor(ir,iz,3)=elz*c2
+                enddo
+            enddo
+        endif
+    endif
+    !-----Dual-strip right helical antenna----------!
 
     !ja_m_nor=ja_m_nor*1.0D0
     continue

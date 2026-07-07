@@ -183,6 +183,7 @@ subroutine initialize
     !                    = 1, right helical
     !                    = 2, half loop
     !                    = 3, Nagoya type-III
+    !                    =11, dual-strip right helical
     !iswitch_antenna_type=1 !@namelist
 
     !important: this version only tests i_switch_power_mode=0. !!!

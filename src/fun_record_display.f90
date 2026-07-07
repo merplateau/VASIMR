@@ -57,6 +57,7 @@ subroutine display_main
             if(iswitch_antenna_type==1) write(*,"('antenna type : right helical   (',i3, ' )')")iswitch_antenna_type
             if(iswitch_antenna_type==2) write(*,"('antenna type : half loop  (',i3, ' )')")iswitch_antenna_type
             if(iswitch_antenna_type==3) write(*,"('antenna type : Nagoya type-III  (',i3, ' )')")iswitch_antenna_type
+            if(iswitch_antenna_type==11)write(*,"('antenna type : dual-strip right helical  (',i3, ' )')")iswitch_antenna_type
             write(*, "('azimuthal mode m: [ ',i3,', ',i3,' ]')") m_start,m_end
             !write(*, "('mass_number=', f7.1,', f=',f7.2,' MHz')") mass_number ,frequency/1e6
             write(*, "('center B0 =', f7.0,', B_resonance=',f7.1,' G')") 1e4*bz_max, 1e4*B_resonance
